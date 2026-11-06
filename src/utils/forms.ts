@@ -37,3 +37,27 @@ export function cnpjValido(valor: string): boolean {
   const d2 = digito(c.slice(0, 12) + d1)
   return c.endsWith(`${d1}${d2}`)
 }
+
+export const mascararData = (t: string) => aplicar(apenasDigitos(t).slice(0, 8), '##/##/####')
+export const mascararHora = (t: string) => aplicar(apenasDigitos(t).slice(0, 4), '##:##')
+
+export const horaValida = (h: string) => /^([01]\d|2[0-3]):[0-5]\d$/.test(h)
+
+/** "07/11/2026" vira "2026-11-07". Devolve null se não for uma data real (ex.: 31/02). */
+export function dataTextoParaISO(texto: string): string | null {
+  const m = /^(\d{2})\/(\d{2})\/(\d{4})$/.exec(texto)
+  if (!m) return null
+
+  const [, d, mes, a] = m
+  const data = new Date(Number(a), Number(mes) - 1, Number(d))
+  const real =
+    data.getFullYear() === Number(a) && data.getMonth() === Number(mes) - 1 && data.getDate() === Number(d)
+
+  return real ? `${a}-${mes}-${d}` : null
+}
+
+/** "2026-11-07" vira "07/11/2026". */
+export function isoParaTexto(iso: string): string {
+  const [a, m, d] = iso.slice(0, 10).split('-')
+  return `${d}/${m}/${a}`
+}

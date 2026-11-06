@@ -6,7 +6,8 @@ import FormField from './FormField'
 import Modal from './Modal'
 import { entregaService } from '../services/entregaService'
 import type { ReservaView, TipoEntrega } from '../types'
-import { dataHoraInput, formatarQuantidade } from '../utils/format'
+import { dataHoraInput, dataISO, formatarQuantidade } from '../utils/format'
+import { dataTextoParaISO, horaValida, isoParaTexto, mascararData, mascararHora } from '../utils/forms'
 import { inputClasses } from '../utils/styles'
 
 interface FormularioProps {
@@ -17,26 +18,40 @@ interface FormularioProps {
 
 function Formulario({ reserva, onFechar, onAgendada }: FormularioProps) {
   const [tipo, setTipo] = useState<TipoEntrega>('RETIRADA')
-  const [quando, setQuando] = useState('')
+  const [data, setData] = useState('')
+  const [hora, setHora] = useState('')
   const [responsavel, setResponsavel] = useState('')
   const [tentou, setTentou] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [erroApi, setErroApi] = useState<string | null>(null)
 
-  const limite = reserva.doacao ? `${reserva.doacao.dataLimiteRetirada.slice(0, 10)}T23:59` : undefined
+  const limiteData = reserva.doacao?.dataLimiteRetirada.slice(0, 10)
+  const iso = dataTextoParaISO(data)
+  const quando = iso && horaValida(hora) ? `${iso}T${hora}` : ''
 
-    const lido = quando
-    ? new Date(quando).toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })
-    : ''
-
-  function erroData(): string | undefined {
-    if (!quando) return 'Informe a data e o horário.'
-        if (quando < dataHoraInput(0)) return `O horário escolhido (${lido}) já passou.`
-    if (limite && quando > limite) return `O horário escolhido (${lido}) passa do prazo limite de retirada.`
+  function erroPrazo(): string | undefined {
+    if (!quando) return undefined
+    if (quando < dataHoraInput(0)) return `${data} às ${hora} já passou. Escolha um horário a partir de agora.`
+    if (limiteData && quando > `${limiteData}T23:59`) {
+      return `${data} às ${hora} passa do prazo limite de retirada (${isoParaTexto(limiteData)}).`
+    }
     return undefined
   }
 
-  const erro = erroData()
+  function erroDoCampoData(): string | undefined {
+    if (!data) return 'Informe a data.'
+    if (!iso) return 'Data inválida. Use dia/mês/ano, por exemplo 07/11/2026.'
+    return erroPrazo()
+  }
+
+  function erroDoCampoHora(): string | undefined {
+    if (!hora) return 'Informe o horário.'
+    if (!horaValida(hora)) return 'Horário inválido. Use horas e minutos, por exemplo 13:00.'
+    return undefined
+  }
+
+  const erroD = erroDoCampoData()
+  const erroH = erroDoCampoHora()
   const erroResponsavel = responsavel.length > 120 ? 'Use no máximo 120 caracteres.' : undefined
 
   async function enviar(e: FormEvent) {
@@ -44,8 +59,8 @@ function Formulario({ reserva, onFechar, onAgendada }: FormularioProps) {
     setTentou(true)
     setErroApi(null)
 
-    if (erro || erroResponsavel) {
-      document.getElementById(erro ? 'quando' : 'responsavel')?.focus()
+    if (erroD || erroH || erroResponsavel) {
+      document.getElementById(erroD ? 'data' : erroH ? 'hora' : 'responsavel')?.focus()
       return
     }
 
@@ -86,19 +101,59 @@ function Formulario({ reserva, onFechar, onAgendada }: FormularioProps) {
           </select>
         </FormField>
 
-        <FormField id="quando" label="Data e horário" required error={tentou ? erro : undefined}  hint={lido ? `Agendando para ${lido}` : 'Escolha pelo calendário do campo.'}>
-          <input
-            id="quando"
-            type="datetime-local"
-            min={dataHoraInput(0)}
-            max={limite}
-            value={quando}
-            onChange={(e) => setQuando(e.target.value)}
-            aria-invalid={Boolean(tentou && erro)}
-            aria-describedby={tentou && erro ? 'quando-erro' : undefined}
-            className={inputClasses(Boolean(tentou && erro))}
-          />
-        </FormField>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <FormField
+            id="data"
+            label="Data"
+            required
+            error={tentou ? erroD : undefined}
+            hint={limiteData ? `Prazo limite: ${isoParaTexto(limiteData)}` : undefined}
+          >
+            <input
+              id="data"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="dd/mm/aaaa"
+              value={data}
+              onChange={(e) => setData(mascararData(e.target.value))}
+              aria-invalid={Boolean(tentou && erroD)}
+              aria-describedby={tentou && erroD ? 'data-erro' : undefined}
+              className={inputClasses(Boolean(tentou && erroD))}
+            />
+            <div className="mt-2 flex gap-2">
+              <button
+                type="button"
+                onClick={() => setData(isoParaTexto(dataISO(0)))}
+                className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 ring-1 ring-brand-100 hover:bg-brand-100"
+              >
+                Hoje
+              </button>
+              <button
+                type="button"
+                onClick={() => setData(isoParaTexto(dataISO(1)))}
+                className="rounded-full bg-brand-50 px-3 py-1 text-xs font-bold text-brand-700 ring-1 ring-brand-100 hover:bg-brand-100"
+              >
+                Amanhã
+              </button>
+            </div>
+          </FormField>
+
+          <FormField id="hora" label="Horário" required error={tentou ? erroH : undefined} hint="Formato 24 horas.">
+            <input
+              id="hora"
+              type="text"
+              inputMode="numeric"
+              autoComplete="off"
+              placeholder="hh:mm"
+              value={hora}
+              onChange={(e) => setHora(mascararHora(e.target.value))}
+              aria-invalid={Boolean(tentou && erroH)}
+              aria-describedby={tentou && erroH ? 'hora-erro' : undefined}
+              className={inputClasses(Boolean(tentou && erroH))}
+            />
+          </FormField>
+        </div>
 
         <FormField
           id="responsavel"
