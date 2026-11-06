@@ -108,3 +108,7 @@ export interface Sessao {
   estabelecimento?: Estabelecimento
   instituicao?: Instituicao
 }
+
+export type NovoUsuario = Pick<Usuario, 'nome' | 'email' | 'telefone' | 'tipoUsuario'> & { senha: string }
+export type NovoEstabelecimento = Omit<Estabelecimento, 'idEstabelecimento'>
+export type NovaInstituicao = Omit<Instituicao, 'idInstituicao'>

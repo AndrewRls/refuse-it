@@ -50,6 +50,22 @@ function validarUsuario(b) {
   return null
 }
 
+function validarPerfil(recurso, b) {
+  const lista = db[recurso]
+  if (!db.usuarios.some((u) => u.idUsuario === b.idUsuario)) return { status: 400, message: 'Usuário inexistente.' }
+  if (lista.some((p) => p.idUsuario === b.idUsuario))
+    return { status: 409, message: 'Este usuário já possui um perfil cadastrado.' }
+
+  const cnpj = String(b.cnpj ?? '')
+  if (recurso === 'estabelecimentos' || cnpj) {
+    if (!/^\d{14}$/.test(cnpj)) return { status: 400, message: 'O CNPJ deve ter 14 dígitos.' }
+    if (lista.some((p) => p.cnpj === cnpj)) return { status: 409, message: 'Este CNPJ já está cadastrado.' }
+  }
+  if (!/^\d{8}$/.test(String(b.cep ?? ''))) return { status: 400, message: 'O CEP deve ter 8 dígitos.' }
+  if (!/^[A-Z]{2}$/.test(String(b.estado ?? ''))) return { status: 400, message: 'O estado deve ter 2 letras.' }
+  return null
+}
+
 async function lerCorpo(req) {
   const partes = []
   for await (const parte of req) partes.push(parte)
@@ -123,6 +139,11 @@ createServer(async (req, res) => {
       if (db.usuarios.some((u) => u.email.toLowerCase() === corpo.email.toLowerCase()))
         return enviar(409, { message: 'Este e-mail já está cadastrado.' })
       Object.assign(novo, { dataCadastro: new Date().toISOString().slice(0, 19), status: 'ATIVO' })
+    }
+
+        if (recurso === 'estabelecimentos' || recurso === 'instituicoes') {
+      const erro = validarPerfil(recurso, corpo)
+      if (erro) return enviar(erro.status, { message: erro.message })
     }
 
     novo[chave] = Math.max(0, ...lista.map((x) => x[chave])) + 1
