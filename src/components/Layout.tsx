@@ -1,6 +1,6 @@
 import { useEffect } from 'react'
 import { Outlet, useLocation } from 'react-router-dom'
-import Navbar from './NavBar'
+import Navbar from './Navbar'
 import Footer from './Footer'
 
 function ScrollToTop() {

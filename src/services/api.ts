@@ -10,10 +10,16 @@ export class ApiError extends Error {
 
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const { headers, ...rest } = options
-  const response = await fetch(`${BASE_URL}${path}`, {
-    headers: { 'Content-Type': 'application/json', ...headers },
-    ...rest,
-  })
+
+  let response: Response
+  try {
+    response = await fetch(`${BASE_URL}${path}`, {
+      headers: { 'Content-Type': 'application/json', ...headers },
+      ...rest,
+    })
+  } catch {
+    throw new ApiError(0, 'Não foi possível conectar ao servidor. Tente novamente em instantes.')
+  }
 
   if (!response.ok) {
     let message = `Erro ${response.status}`

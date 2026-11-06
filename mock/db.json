@@ -1,0 +1,25 @@
+{
+  "estabelecimentos": [
+    { "idEstabelecimento": 1, "idUsuario": 1, "nomeFantasia": "Padaria Bom Grão", "razaoSocial": "Bom Grão Panificadora LTDA", "cnpj": "11111111000111", "categoria": "PADARIA", "endereco": "Rua das Flores, 120", "cidade": "Carapicuíba", "estado": "SP", "cep": "06300000" },
+    { "idEstabelecimento": 2, "idUsuario": 2, "nomeFantasia": "Mercado Villa Verde", "razaoSocial": "Villa Verde Comércio LTDA", "cnpj": "22222222000122", "categoria": "MERCADO", "endereco": "Av. Brasil, 800", "cidade": "Osasco", "estado": "SP", "cep": "06000000" },
+    { "idEstabelecimento": 3, "idUsuario": 3, "nomeFantasia": "Sítio Raízes", "razaoSocial": "Sítio Raízes Produtos Rurais", "cnpj": "33333333000133", "categoria": "PRODUTOR", "endereco": "Estrada do Sol, km 4", "cidade": "Cotia", "estado": "SP", "cep": "06700000" },
+    { "idEstabelecimento": 4, "idUsuario": 4, "nomeFantasia": "Restaurante Sabor Caseiro", "razaoSocial": "Sabor Caseiro Alimentos LTDA", "cnpj": "44444444000144", "categoria": "RESTAURANTE", "endereco": "Rua Central, 55", "cidade": "São Paulo", "estado": "SP", "cep": "01000000" }
+  ],
+  "alimentos": [
+    { "idAlimento": 1, "nome": "Pão francês", "categoria": "Panificados", "descricao": "Pães do dia", "unidadeMedida": "KG" },
+    { "idAlimento": 2, "nome": "Banana prata", "categoria": "Frutas", "descricao": "Maduras, ótimas para consumo", "unidadeMedida": "KG" },
+    { "idAlimento": 3, "nome": "Tomate", "categoria": "Legumes e verduras", "descricao": "Aparência irregular, próprio para consumo", "unidadeMedida": "KG" },
+    { "idAlimento": 4, "nome": "Iogurte natural", "categoria": "Laticínios", "descricao": "Potes de 170 g", "unidadeMedida": "UNIDADE" },
+    { "idAlimento": 5, "nome": "Arroz com feijão", "categoria": "Refeições prontas", "descricao": "Marmitas do almoço", "unidadeMedida": "UNIDADE" },
+    { "idAlimento": 6, "nome": "Leite integral", "categoria": "Laticínios", "descricao": "Caixas de 1 litro", "unidadeMedida": "LITRO" }
+  ],
+  "doacoes": [
+    { "idDoacao": 1, "idEstabelecimento": 1, "idAlimento": 1, "quantidadeTotal": 20, "quantidadeDisponivel": 12, "dataPublicacao": "2026-11-05T08:00:00", "dataValidade": "2026-11-07", "dataLimiteRetirada": "2026-11-06", "condicaoArmazenamento": "Temperatura ambiente", "status": "PARCIALMENTE_RESERVADA" },
+    { "idDoacao": 2, "idEstabelecimento": 2, "idAlimento": 2, "quantidadeTotal": 40, "quantidadeDisponivel": 40, "dataPublicacao": "2026-11-04T10:30:00", "dataValidade": "2026-11-09", "dataLimiteRetirada": "2026-11-08", "condicaoArmazenamento": "Local fresco e ventilado", "status": "DISPONIVEL" },
+    { "idDoacao": 3, "idEstabelecimento": 3, "idAlimento": 3, "quantidadeTotal": 60, "quantidadeDisponivel": 60, "dataPublicacao": "2026-11-05T07:15:00", "dataValidade": "2026-11-12", "dataLimiteRetirada": "2026-11-10", "condicaoArmazenamento": "Refrigerado", "status": "DISPONIVEL" },
+    { "idDoacao": 4, "idEstabelecimento": 2, "idAlimento": 4, "quantidadeTotal": 100, "quantidadeDisponivel": 100, "dataPublicacao": "2026-11-03T16:00:00", "dataValidade": "2026-11-08", "dataLimiteRetirada": "2026-11-07", "condicaoArmazenamento": "Refrigerado entre 2 e 8 °C", "status": "DISPONIVEL" },
+    { "idDoacao": 5, "idEstabelecimento": 4, "idAlimento": 5, "quantidadeTotal": 30, "quantidadeDisponivel": 30, "dataPublicacao": "2026-11-05T13:40:00", "dataValidade": "2026-11-06", "dataLimiteRetirada": "2026-11-05", "condicaoArmazenamento": "Manter aquecido ou refrigerar", "status": "DISPONIVEL" },
+    { "idDoacao": 6, "idEstabelecimento": 2, "idAlimento": 6, "quantidadeTotal": 50, "quantidadeDisponivel": 0, "dataPublicacao": "2026-11-02T09:00:00", "dataValidade": "2026-11-10", "dataLimiteRetirada": "2026-11-09", "condicaoArmazenamento": "Refrigerado", "status": "ESGOTADA" },
+    { "idDoacao": 7, "idEstabelecimento": 1, "idAlimento": 2, "quantidadeTotal": 15, "quantidadeDisponivel": 15, "dataPublicacao": "2026-10-28T09:00:00", "dataValidade": "2026-11-03", "dataLimiteRetirada": "2026-11-02", "condicaoArmazenamento": "Temperatura ambiente", "status": "EXPIRADA" }
+  ]
+}

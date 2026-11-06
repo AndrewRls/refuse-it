@@ -90,3 +90,9 @@ export type NovaDoacao = Pick<
   'idEstabelecimento' | 'idAlimento' | 'quantidadeTotal' |
   'dataValidade' | 'dataLimiteRetirada' | 'condicaoArmazenamento'
 >
+
+/** Doação já combinada com os dados do alimento e do estabelecimento */
+export interface DoacaoView extends Doacao {
+  alimento?: Alimento
+  estabelecimento?: Estabelecimento
+}
