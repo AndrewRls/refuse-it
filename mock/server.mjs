@@ -12,6 +12,7 @@ const campoId = {
   estabelecimentos: 'idEstabelecimento',
   instituicoes: 'idInstituicao',
   reservas: 'idReserva',
+  entregas: 'idEntrega',
   usuarios: 'idUsuario',
 }
 for (const recurso of Object.keys(campoId)) db[recurso] ??= []
@@ -88,7 +89,16 @@ function validarReserva(b) {
     return { status: 409, message: `Quantidade indisponível. Restam ${doacao.quantidadeDisponivel}.` }
   return null
 }
-
+function validarEntrega(b) {
+  if (!['RETIRADA', 'ENTREGA'].includes(b.tipoEntrega)) return { status: 400, message: 'Tipo de entrega inválido.' }
+  if (!b.dataAgendada) return { status: 400, message: 'Informe a data e o horário agendados.' }
+  if (b.responsavel && b.responsavel.length > 120)
+    return { status: 400, message: 'O responsável deve ter no máximo 120 caracteres.' }
+  if (b.status === 'CONCLUIDA' && !b.dataConclusao) return { status: 400, message: 'Informe a data de conclusão.' }
+  if (b.dataConclusao && b.dataConclusao < b.dataAgendada)
+    return { status: 400, message: 'A conclusão não pode ser anterior ao agendamento.' }
+  return null
+}
 async function lerCorpo(req) {
   const partes = []
   for await (const parte of req) partes.push(parte)
@@ -176,6 +186,20 @@ createServer(async (req, res) => {
       recalcularStatusDoacao(doacao)
       Object.assign(novo, { dataReserva: new Date().toISOString().slice(0, 19), status: 'PENDENTE' })
     }
+        if (recurso === 'entregas') {
+      const reserva = db.reservas.find((r) => r.idReserva === corpo.idReserva)
+      if (!reserva) return enviar(400, { message: 'Reserva inexistente.' })
+      if (reserva.status !== 'APROVADA')
+        return enviar(409, { message: 'Só é possível agendar a entrega de uma reserva aprovada.' })
+      if (db.entregas.some((e) => e.idReserva === corpo.idReserva))
+        return enviar(409, { message: 'Esta reserva já possui uma entrega agendada.' })
+      const erro = validarEntrega({ ...corpo, status: 'AGENDADA' })
+      if (erro) return enviar(erro.status, { message: erro.message })
+      const doacao = db.doacoes.find((d) => d.idDoacao === reserva.idDoacao)
+      if (doacao && String(corpo.dataAgendada).slice(0, 10) > doacao.dataLimiteRetirada)
+        return enviar(400, { message: 'O agendamento deve ser até o prazo limite de retirada.' })
+      novo.status = 'AGENDADA'
+    }
 
     novo[chave] = Math.max(0, ...lista.map((x) => x[chave])) + 1
     lista.push(novo)
@@ -186,6 +210,10 @@ createServer(async (req, res) => {
     if (!item) return enviar(404, { message: 'Registro não encontrado.' })
     const corpo = await lerCorpo(req)
     if (!corpo) return enviar(400, { message: 'JSON inválido.' })
+          if (recurso === 'entregas') {
+      const erro = validarEntrega({ ...item, ...corpo })
+      if (erro) return enviar(erro.status, { message: erro.message })
+    }
         const statusAnterior = item.status
     Object.assign(item, corpo, { [chave]: id })
 

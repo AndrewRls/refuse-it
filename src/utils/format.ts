@@ -56,3 +56,30 @@ export function dataISO(offsetDias = 0): string {
 export function formatarDataHora(iso: string): string {
   return new Date(iso).toLocaleString('pt-BR', { dateStyle: 'short', timeStyle: 'short' })
 }
+
+const pad = (n: number) => String(n).padStart(2, '0')
+
+function localISO(d: Date, comSegundos: boolean): string {
+  const base = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  return comSegundos ? `${base}:${pad(d.getSeconds())}` : base
+}
+
+/** Valor para inputs type="datetime-local" (AAAA-MM-DDTHH:mm), em horário local. */
+export const dataHoraInput = (offsetMinutos = 0) => localISO(new Date(Date.now() + offsetMinutos * 60_000), false)
+
+/** Agora em horário local, sem fuso (AAAA-MM-DDTHH:mm:ss), como as colunas TIMESTAMP. */
+export const agoraISO = () => localISO(new Date(), true)
+
+const fatorKg: Record<UnidadeMedida, number | null> = {
+  KG: 1,
+  GRAMA: 0.001,
+  LITRO: 1, // simplificação: 1 L ≈ 1 kg
+  ML: 0.001,
+  UNIDADE: null,
+}
+
+/** Peso estimado em kg, ou null quando o item é contado por unidade. */
+export function pesoEmKg(quantidade: number, unidade: UnidadeMedida): number | null {
+  const fator = fatorKg[unidade]
+  return fator === null ? null : quantidade * fator
+}

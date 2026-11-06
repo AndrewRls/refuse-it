@@ -113,3 +113,28 @@ export type NovoUsuario = Pick<Usuario, 'nome' | 'email' | 'telefone' | 'tipoUsu
 export type NovoEstabelecimento = Omit<Estabelecimento, 'idEstabelecimento'>
 export type NovaInstituicao = Omit<Instituicao, 'idInstituicao'>
 export type NovaReserva = Pick<Reserva, 'idDoacao' | 'idInstituicao' | 'quantidadeSolicitada' | 'observacao'>
+export type NovaEntrega = Pick<Entrega, 'idReserva' | 'dataAgendada' | 'tipoEntrega' | 'responsavel'>
+
+export interface PainelDados {
+  doacoes: Doacao[]
+  alimentos: Alimento[]
+  estabelecimentos: Estabelecimento[]
+  instituicoes: Instituicao[]
+  reservas: Reserva[]
+  entregas: Entrega[]
+}
+
+export interface ReservaView extends Reserva {
+  doacao?: DoacaoView
+  instituicao?: Instituicao
+  entrega?: Entrega
+}
+
+export interface Indicadores {
+  kgReaproveitados: number
+  unidadesReaproveitadas: number
+  doacoesAtivas: number
+  reservasPendentes: number
+  reservasAprovadas: number
+  reservasConcluidas: number
+}
