@@ -25,10 +25,14 @@ function Formulario({ reserva, onFechar, onAgendada }: FormularioProps) {
 
   const limite = reserva.doacao ? `${reserva.doacao.dataLimiteRetirada.slice(0, 10)}T23:59` : undefined
 
+    const lido = quando
+    ? new Date(quando).toLocaleString('pt-BR', { dateStyle: 'full', timeStyle: 'short' })
+    : ''
+
   function erroData(): string | undefined {
     if (!quando) return 'Informe a data e o horário.'
-    if (quando < dataHoraInput(0)) return 'O horário não pode estar no passado.'
-    if (limite && quando > limite) return 'O horário passa do prazo limite de retirada.'
+        if (quando < dataHoraInput(0)) return `O horário escolhido (${lido}) já passou.`
+    if (limite && quando > limite) return `O horário escolhido (${lido}) passa do prazo limite de retirada.`
     return undefined
   }
 
@@ -82,7 +86,7 @@ function Formulario({ reserva, onFechar, onAgendada }: FormularioProps) {
           </select>
         </FormField>
 
-        <FormField id="quando" label="Data e horário" required error={tentou ? erro : undefined}>
+        <FormField id="quando" label="Data e horário" required error={tentou ? erro : undefined}  hint={lido ? `Agendando para ${lido}` : 'Escolha pelo calendário do campo.'}>
           <input
             id="quando"
             type="datetime-local"
