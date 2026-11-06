@@ -31,6 +31,10 @@ const unidades: Record<UnidadeMedida, string> = {
   UNIDADE: 'un',
 }
 
+export function rotuloUnidade(unidade: UnidadeMedida): string {
+  return unidades[unidade]
+}
+
 export function formatarQuantidade(valor: number, unidade?: UnidadeMedida): string {
   const numero = valor.toLocaleString('pt-BR', { maximumFractionDigits: 2 })
   return unidade ? `${numero} ${unidades[unidade]}` : numero
@@ -38,4 +42,13 @@ export function formatarQuantidade(valor: number, unidade?: UnidadeMedida): stri
 
 export function semAcento(texto: string): string {
   return texto.normalize('NFD').replace(/\p{Diacritic}/gu, '').toLowerCase()
+}
+
+/** Data local no formato AAAA-MM-DD (valor dos inputs type="date"). */
+export function dataISO(offsetDias = 0): string {
+  const d = new Date()
+  d.setDate(d.getDate() + offsetDias)
+  const mes = String(d.getMonth() + 1).padStart(2, '0')
+  const dia = String(d.getDate()).padStart(2, '0')
+  return `${d.getFullYear()}-${mes}-${dia}`
 }
