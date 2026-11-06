@@ -19,3 +19,12 @@ export async function carregarCatalogo(): Promise<DoacaoView[]> {
     estabelecimento: estabPorId.get(d.idEstabelecimento),
   }))
 }
+
+export async function carregarDetalhe(id: number): Promise<DoacaoView> {
+  const doacao = await doacaoService.buscar(id)
+  const [alimento, estabelecimento] = await Promise.all([
+    alimentoService.buscar(doacao.idAlimento),
+    estabelecimentoService.buscar(doacao.idEstabelecimento),
+  ])
+  return { ...doacao, alimento, estabelecimento }
+}

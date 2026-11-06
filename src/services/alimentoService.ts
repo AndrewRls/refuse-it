@@ -3,4 +3,5 @@ import type { Alimento } from '../types'
 
 export const alimentoService = {
   listar: () => request<Alimento[]>('/alimentos'),
+  buscar: (id: number) => request<Alimento>(`/alimentos/${id}`),
 }

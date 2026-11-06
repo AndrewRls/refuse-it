@@ -66,6 +66,29 @@ function validarPerfil(recurso, b) {
   return null
 }
 
+function recalcularStatusDoacao(d) {
+  if (d.status === 'CANCELADA' || d.status === 'EXPIRADA') return
+  if (d.quantidadeDisponivel <= 0) d.status = 'ESGOTADA'
+  else if (d.quantidadeDisponivel < d.quantidadeTotal) d.status = 'PARCIALMENTE_RESERVADA'
+  else d.status = 'DISPONIVEL'
+}
+
+function validarReserva(b) {
+  const doacao = db.doacoes.find((d) => d.idDoacao === b.idDoacao)
+  if (!doacao) return { status: 400, message: 'Doação inexistente.' }
+  if (!db.instituicoes.some((i) => i.idInstituicao === b.idInstituicao))
+    return { status: 400, message: 'Instituição inexistente.' }
+  if (typeof b.quantidadeSolicitada !== 'number' || b.quantidadeSolicitada <= 0)
+    return { status: 400, message: 'A quantidade solicitada deve ser maior que zero.' }
+  if (b.observacao && b.observacao.length > 500)
+    return { status: 400, message: 'A observação deve ter no máximo 500 caracteres.' }
+  if (!['DISPONIVEL', 'PARCIALMENTE_RESERVADA'].includes(doacao.status) || doacao.dataLimiteRetirada < dataLocal())
+    return { status: 409, message: 'Esta doação não está mais disponível para reserva.' }
+  if (b.quantidadeSolicitada > doacao.quantidadeDisponivel)
+    return { status: 409, message: `Quantidade indisponível. Restam ${doacao.quantidadeDisponivel}.` }
+  return null
+}
+
 async function lerCorpo(req) {
   const partes = []
   for await (const parte of req) partes.push(parte)
@@ -141,9 +164,17 @@ createServer(async (req, res) => {
       Object.assign(novo, { dataCadastro: new Date().toISOString().slice(0, 19), status: 'ATIVO' })
     }
 
-        if (recurso === 'estabelecimentos' || recurso === 'instituicoes') {
+    if (recurso === 'estabelecimentos' || recurso === 'instituicoes') {
       const erro = validarPerfil(recurso, corpo)
       if (erro) return enviar(erro.status, { message: erro.message })
+    }
+    if (recurso === 'reservas') {
+      const erro = validarReserva(corpo)
+      if (erro) return enviar(erro.status, { message: erro.message })
+      const doacao = db.doacoes.find((d) => d.idDoacao === corpo.idDoacao)
+      doacao.quantidadeDisponivel = Number((doacao.quantidadeDisponivel - corpo.quantidadeSolicitada).toFixed(2))
+      recalcularStatusDoacao(doacao)
+      Object.assign(novo, { dataReserva: new Date().toISOString().slice(0, 19), status: 'PENDENTE' })
     }
 
     novo[chave] = Math.max(0, ...lista.map((x) => x[chave])) + 1
@@ -155,7 +186,21 @@ createServer(async (req, res) => {
     if (!item) return enviar(404, { message: 'Registro não encontrado.' })
     const corpo = await lerCorpo(req)
     if (!corpo) return enviar(400, { message: 'JSON inválido.' })
+        const statusAnterior = item.status
     Object.assign(item, corpo, { [chave]: id })
+
+    if (
+      recurso === 'reservas' &&
+      ['PENDENTE', 'APROVADA'].includes(statusAnterior) &&
+      ['RECUSADA', 'CANCELADA'].includes(item.status)
+    ) {
+      const doacao = db.doacoes.find((d) => d.idDoacao === item.idDoacao)
+      if (doacao) {
+        const devolvida = doacao.quantidadeDisponivel + item.quantidadeSolicitada
+        doacao.quantidadeDisponivel = Number(Math.min(doacao.quantidadeTotal, devolvida).toFixed(2))
+        recalcularStatusDoacao(doacao)
+      }
+    }
     return enviar(200, publico(recurso, item))
   }
 
