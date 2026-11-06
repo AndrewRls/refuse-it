@@ -13,6 +13,7 @@ import type { Doacao } from '../types'
 import { dataISO, rotuloUnidade } from '../utils/format'
 import { inputClasses } from '../utils/styles'
 import { useAuth } from '../hooks/useAuth'
+import { dataTextoParaISO, mascararData } from '../utils/forms'
 interface FormValores {
     idEstabelecimento: string
     idAlimento: string
@@ -55,17 +56,24 @@ function validar(v: FormValores): Erros {
         else if (qtd > 99_999_999.99) erros.quantidadeTotal = 'Quantidade acima do limite permitido.'
     }
 
+    const validade = dataTextoParaISO(v.dataValidade)
+    const retirada = dataTextoParaISO(v.dataLimiteRetirada)
+
     if (!v.dataValidade) {
         erros.dataValidade = 'Informe a data de validade.'
-    } else if (v.dataValidade < dataISO(1)) {
+    } else if (!validade) {
+        erros.dataValidade = 'Data inválida. Use dia/mês/ano, por exemplo 07/11/2026.'
+    } else if (validade < dataISO(1)) {
         erros.dataValidade = 'A validade deve ser a partir de amanhã.'
     }
 
     if (!v.dataLimiteRetirada) {
         erros.dataLimiteRetirada = 'Informe o prazo limite para retirada.'
-    } else if (v.dataLimiteRetirada < dataISO(0)) {
+    } else if (!retirada) {
+        erros.dataLimiteRetirada = 'Data inválida. Use dia/mês/ano, por exemplo 07/11/2026.'
+    } else if (retirada < dataISO(0)) {
         erros.dataLimiteRetirada = 'O prazo não pode estar no passado.'
-    } else if (v.dataValidade && v.dataLimiteRetirada > v.dataValidade) {
+    } else if (validade && retirada > validade) {
         erros.dataLimiteRetirada = 'A retirada deve ser até a data de validade.'
     }
 
@@ -134,14 +142,18 @@ export default function NovaDoacao() {
             return
         }
 
+        const validade = dataTextoParaISO(valores.dataValidade)
+        const retirada = dataTextoParaISO(valores.dataLimiteRetirada)
+        if (!validade || !retirada) return
+
         setEnviando(true)
         try {
             const nova = await doacaoService.criar({
                 idEstabelecimento: Number(valores.idEstabelecimento),
                 idAlimento: Number(valores.idAlimento),
                 quantidadeTotal: Number(valores.quantidadeTotal),
-                dataValidade: valores.dataValidade,
-                dataLimiteRetirada: valores.dataLimiteRetirada,
+                dataValidade: validade,
+                dataLimiteRetirada: retirada,
                 condicaoArmazenamento: valores.condicaoArmazenamento.trim() || undefined,
             })
             setCriada(nova)
@@ -276,12 +288,20 @@ export default function NovaDoacao() {
                             </FormField>
 
                             <div className="grid gap-6 sm:grid-cols-2">
-                                <FormField id="dataValidade" label="Data de validade" required error={erroDe('dataValidade')}>
+                                <FormField
+                                    id="dataValidade"
+                                    label="Data de validade"
+                                    required
+                                    error={erroDe('dataValidade')}
+                                    hint="Formato dia/mês/ano. A partir de amanhã."
+                                >
                                     <input
                                         {...atributos('dataValidade')}
-                                        type="date"
-                                        min={dataISO(1)}
-                                        onChange={(e) => alterar('dataValidade', e.target.value)}
+                                        type="text"
+                                        inputMode="numeric"
+                                        autoComplete="off"
+                                        placeholder="dd/mm/aaaa"
+                                        onChange={(e) => alterar('dataValidade', mascararData(e.target.value))}
                                     />
                                 </FormField>
 
@@ -290,13 +310,15 @@ export default function NovaDoacao() {
                                     label="Prazo limite de retirada"
                                     required
                                     error={erroDe('dataLimiteRetirada')}
+                                    hint="De hoje até a data de validade."
                                 >
                                     <input
                                         {...atributos('dataLimiteRetirada')}
-                                        type="date"
-                                        min={dataISO(0)}
-                                        max={valores.dataValidade || undefined}
-                                        onChange={(e) => alterar('dataLimiteRetirada', e.target.value)}
+                                        type="text"
+                                        inputMode="numeric"
+                                        autoComplete="off"
+                                        placeholder="dd/mm/aaaa"
+                                        onChange={(e) => alterar('dataLimiteRetirada', mascararData(e.target.value))}
                                     />
                                 </FormField>
                             </div>
