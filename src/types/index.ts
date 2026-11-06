@@ -96,3 +96,15 @@ export interface DoacaoView extends Doacao {
   alimento?: Alimento
   estabelecimento?: Estabelecimento
 }
+
+export interface Credenciais {
+  email: string
+  senha: string
+}
+
+/** Quem está logado: o usuário e o perfil vinculado a ele (1 para 1 no banco). */
+export interface Sessao {
+  usuario: Usuario
+  estabelecimento?: Estabelecimento
+  instituicao?: Instituicao
+}

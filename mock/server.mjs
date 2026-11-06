@@ -3,15 +3,25 @@ import { createServer } from 'node:http'
 import { readFileSync } from 'node:fs'
 
 const PORT = 8080
-const db = JSON.parse(readFileSync(new URL('./db.json', import.meta.url), 'utf-8'))
+const ler = (arquivo) => JSON.parse(readFileSync(new URL(arquivo, import.meta.url), 'utf-8'))
+const db = { ...ler('./db.json'), ...ler('./auth.json') }
 
 const campoId = {
   doacoes: 'idDoacao',
   alimentos: 'idAlimento',
   estabelecimentos: 'idEstabelecimento',
+  instituicoes: 'idInstituicao',
   reservas: 'idReserva',
+  usuarios: 'idUsuario',
 }
 for (const recurso of Object.keys(campoId)) db[recurso] ??= []
+
+// A API real nunca devolve a senha
+const semSenha = ({ senha, ...resto }) => resto
+const publico = (recurso, valor) => {
+  if (recurso !== 'usuarios') return valor
+  return Array.isArray(valor) ? valor.map(semSenha) : semSenha(valor)
+}
 
 const dataLocal = (offset = 0) => {
   const d = new Date()
@@ -29,6 +39,14 @@ function validarDoacao(b) {
     return 'A data limite de retirada deve estar entre hoje e a data de validade.'
   if (b.condicaoArmazenamento && b.condicaoArmazenamento.length > 200)
     return 'A condição de armazenamento deve ter no máximo 200 caracteres.'
+  return null
+}
+
+function validarUsuario(b) {
+  if (!String(b.nome ?? '').trim()) return 'Informe o nome.'
+  if (!/^\S+@\S+\.\S+$/.test(String(b.email ?? ''))) return 'E-mail inválido.'
+  if (String(b.senha ?? '').length < 6) return 'A senha deve ter pelo menos 6 caracteres.'
+  if (!['DOADOR', 'INSTITUICAO'].includes(b.tipoUsuario)) return 'Tipo de usuário inválido.'
   return null
 }
 
@@ -58,6 +76,19 @@ createServer(async (req, res) => {
   if (req.method === 'OPTIONS') return enviar(204)
 
   const [, recurso, idTxt] = new URL(req.url, 'http://localhost').pathname.split('/')
+
+  // Login
+  if (recurso === 'login') {
+    if (req.method !== 'POST') return enviar(405, { message: 'Método não suportado.' })
+    const corpo = await lerCorpo(req)
+    if (!corpo?.email || !corpo?.senha) return enviar(400, { message: 'Informe e-mail e senha.' })
+
+    const usuario = db.usuarios.find((u) => u.email.toLowerCase() === String(corpo.email).toLowerCase())
+    if (!usuario || usuario.senha !== corpo.senha) return enviar(401, { message: 'E-mail ou senha inválidos.' })
+    if (usuario.status !== 'ATIVO') return enviar(403, { message: 'Esta conta está inativa.' })
+    return enviar(200, semSenha(usuario))
+  }
+
   const chave = campoId[recurso]
   if (!chave) return enviar(404, { message: 'Recurso não encontrado.' })
 
@@ -66,8 +97,8 @@ createServer(async (req, res) => {
   const item = id === null ? null : lista.find((x) => x[chave] === id)
 
   if (req.method === 'GET') {
-    if (id === null) return enviar(200, lista)
-    return item ? enviar(200, item) : enviar(404, { message: 'Registro não encontrado.' })
+    if (id === null) return enviar(200, publico(recurso, lista))
+    return item ? enviar(200, publico(recurso, item)) : enviar(404, { message: 'Registro não encontrado.' })
   }
 
   if (req.method === 'POST' && id === null) {
@@ -75,6 +106,7 @@ createServer(async (req, res) => {
     if (!corpo) return enviar(400, { message: 'JSON inválido.' })
 
     const novo = { ...corpo }
+
     if (recurso === 'doacoes') {
       const erro = validarDoacao(corpo)
       if (erro) return enviar(400, { message: erro })
@@ -84,9 +116,18 @@ createServer(async (req, res) => {
         status: 'DISPONIVEL',
       })
     }
+
+    if (recurso === 'usuarios') {
+      const erro = validarUsuario(corpo)
+      if (erro) return enviar(400, { message: erro })
+      if (db.usuarios.some((u) => u.email.toLowerCase() === corpo.email.toLowerCase()))
+        return enviar(409, { message: 'Este e-mail já está cadastrado.' })
+      Object.assign(novo, { dataCadastro: new Date().toISOString().slice(0, 19), status: 'ATIVO' })
+    }
+
     novo[chave] = Math.max(0, ...lista.map((x) => x[chave])) + 1
     lista.push(novo)
-    return enviar(201, novo, { Location: `/${recurso}/${novo[chave]}` })
+    return enviar(201, publico(recurso, novo), { Location: `/${recurso}/${novo[chave]}` })
   }
 
   if (req.method === 'PUT' && id !== null) {
@@ -94,7 +135,7 @@ createServer(async (req, res) => {
     const corpo = await lerCorpo(req)
     if (!corpo) return enviar(400, { message: 'JSON inválido.' })
     Object.assign(item, corpo, { [chave]: id })
-    return enviar(200, item)
+    return enviar(200, publico(recurso, item))
   }
 
   if (req.method === 'DELETE' && id !== null) {
