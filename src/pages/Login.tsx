@@ -6,6 +6,7 @@ import Button from '../components/Button'
 import FormField from '../components/FormField'
 import { useAuth } from '../hooks/useAuth'
 import { inputClasses } from '../utils/styles'
+import Foto from '../components/Foto'
 
 const contasTeste = [
   { rotulo: 'Doador (Padaria)', email: 'doador@refuseit.com' },
@@ -59,14 +60,18 @@ export default function Login() {
     <section className="px-4 py-12 sm:px-6 lg:py-20">
       <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl shadow-xl shadow-brand-900/10 ring-1 ring-brand-100 lg:grid-cols-2">
         {/* Painel da marca */}
-        <div className="relative hidden flex-col justify-between overflow-hidden bg-linear-to-br from-brand-900 to-brand-700 p-10 text-white lg:flex">
-          <div aria-hidden="true" className="absolute -right-16 -bottom-16 h-72 w-72 rounded-full bg-white/10 blur-2xl" />
-          <p className="relative text-2xl font-extrabold">
+                {/* Painel da marca */}
+        <div className="relative isolate hidden flex-col justify-between overflow-hidden p-10 text-white lg:flex">
+          <Foto nome={['login', 'foto-3']} alt="" className="absolute inset-0 -z-10 h-full w-full" />
+          <div aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-t from-black/80 via-black/40 to-black/20" />
+
+          <p className="text-2xl font-extrabold">
             REFUSE <span className="text-brand-500 italic">IT</span>
           </p>
-          <div className="relative">
+
+          <div>
             <h2 className="text-3xl leading-tight text-white">Bem-vindo de volta.</h2>
-            <p className="mt-3 text-brand-100">
+            <p className="mt-3 text-white/85">
               Acompanhe suas doações, reservas e o impacto que você está gerando.
             </p>
           </div>
