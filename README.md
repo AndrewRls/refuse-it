@@ -1,75 +1,72 @@
-# React + TypeScript + Vite
+# Refuse It
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+Plataforma de redistribuição de alimentos. Global Solution 2026/2, FIAP, disciplina Front-end Design Engineering.
 
-Currently, two official plugins are available:
+## Objetivo
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Oxc](https://oxc.rs)
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/)
+Conectar estabelecimentos comerciais, produtores e instituições sociais para que alimentos que seriam descartados, mas ainda estão próprios para consumo, cheguem a quem precisa. A plataforma também mede o impacto, somando o alimento reaproveitado em cada entrega concluída.
 
-## React Compiler
+ODS relacionados: 2, 10, 11 e 12.
 
-The React Compiler is not enabled on this template because of its impact on dev & build performances. To add it, see [this documentation](https://react.dev/learn/react-compiler/installation).
+## Funcionalidades
 
-## Expanding the ESLint configuration
+- Catálogo de doações com busca, filtros e ordenação
+- Publicação de doações com validação de formulário
+- Reserva de alimentos por instituições
+- Agendamento e acompanhamento de entregas e retiradas
+- Painel com indicadores de impacto, por perfil (doador, instituição e admin)
+- Login, cadastro em etapas e rotas protegidas por perfil
+- Páginas institucionais: Home, Sobre, Integrantes, FAQ e Contato
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+## Tecnologias
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+React, TypeScript, Vite, Tailwind CSS, React Router, Lucide React, Fetch API e ESLint.
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+## Estrutura
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+    src/
+      assets/        imagens (fotos, integrantes, logo)
+      components/    componentes reutilizáveis
+      context/       contexto de autenticação
+      data/          conteúdo estático (integrantes, FAQ)
+      hooks/         hooks (useFetch, useAuth)
+      pages/         páginas da aplicação
+      services/      comunicação com a API Java
+      types/         tipos TypeScript
+      utils/         funções auxiliares
 
-```
+## Integrantes
 
-You can also install [eslint-plugin-react-x](https://npmx.dev/package/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://npmx.dev/package/eslint-plugin-react-dom) for React-specific lint rules:
+| Nome | RM | Turma |
+|---|---|---|
+| Andrew Rodrigues Lima da Silva | RM573777 | 1TDS |
+| Bryan Costa Silva | RM569439 | 1TDS |
+| Luis Henrique Rondão Mendonça | RM569797 | 1TDS |
+| Igor Blacconaro Santos | RM572033 | 1TDS |
+| Luis Felipe Fernandes Esteves | RM569064 | 1TDS |
 
-```js
-// eslint.config.js
-import reactX from 'eslint-plugin-react-x'
-import reactDom from 'eslint-plugin-react-dom'
+## Como executar
 
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-])
+Requisitos: Node.js (versão LTS) e npm.
 
-```
+    npm install
+    npm run dev
+
+A aplicação abre em `http://localhost:5173`. Copie `.env.example` para `.env` e ajuste `VITE_API_URL` para a URL da API.
+
+## Links
+
+- GitHub: PREENCHER
+- Aplicação (Vercel): PREENCHER
+- API Java (Render): PREENCHER
+- Vídeo (YouTube): PREENCHER
+
+## Contato
+
+Os integrantes estão na página de Contato da aplicação, com GitHub e LinkedIn de cada um:
+
+- Andrew: [GitHub](https://github.com/AndrewRls) · [LinkedIn](https://www.linkedin.com/in/andrew-rls)
+- Bryan: [GitHub](https://github.com/BryanC0staDev) · [LinkedIn](https://www.linkedin.com/in/bryan-costa-silva/)
+- Luis Henrique: [GitHub](https://github.com/luishdev0) · [LinkedIn](https://www.linkedin.com/in/luis-rondao)
+- Igor: [GitHub](https://github.com/igorblacconaro) · [LinkedIn](https://www.linkedin.com/in/igorblacconaro)
+- Luis Felipe: [GitHub](https://github.com/dev-luisfernandes) · [LinkedIn](https://www.linkedin.com/in/luis-f-b2a3983b3/)
