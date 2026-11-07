@@ -11,25 +11,21 @@ interface AvatarProps {
   nome: string
   rm: string
   className?: string
+  retrato?: boolean
 }
 
-export default function Avatar({ nome, rm, className = 'h-16 w-16 text-xl' }: AvatarProps) {
+export default function Avatar({ nome, rm, className = 'h-16 w-16 text-xl', retrato = false }: AvatarProps) {
   const src = fotoIntegrante(rm)
+  const forma = retrato ? 'aspect-[4/5] w-full rounded-lg' : `shrink-0 rounded-full ring-4 ring-brand-100 ${className}`
 
   if (src) {
-    return (
-      <img
-        src={src}
-        alt={`Foto de ${nome}`}
-        className={`shrink-0 rounded-full object-cover object-top ring-4 ring-brand-100 ${className}`}
-      />
-    )
+    return <img src={src} alt={`Foto de ${nome}`} className={`object-cover object-top ${forma}`} />
   }
 
   return (
     <span
       aria-hidden="true"
-      className={`flex shrink-0 items-center justify-center rounded-full bg-linear-to-br from-brand-500 to-brand-900 font-extrabold text-white ring-4 ring-brand-100 ${className}`}
+      className={`flex items-center justify-center bg-brand-700 font-extrabold text-white ${forma} ${retrato ? 'text-5xl' : ''}`}
     >
       {iniciais(nome)}
     </span>

@@ -10,6 +10,8 @@
   --color-brand-100: #e4f1dc;
   --color-brand-50: #f4f9f1;
   --color-ink: #1b2a16;
+  --radius-2xl: 0.5rem;
+  --radius-3xl: 0.625rem;
 
   --animate-float: float 6s ease-in-out infinite;
   --animate-spin-slow: spin 24s linear infinite;

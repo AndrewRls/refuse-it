@@ -11,7 +11,7 @@ export default function DoacaoCard({ doacao }: { doacao: DoacaoView }) {
   const urgente = dias >= 0 && dias <= 1
 
   return (
-    <article className="group flex h-full flex-col rounded-3xl bg-white p-6 ring-1 ring-brand-100 transition duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-brand-900/10">
+    <article className="group flex h-full flex-col rounded-3xl bg-white p-6 ring-1 ring-brand-100 transition duration-300 hover:ring-brand-500">
       <div className="flex items-start justify-between gap-3">
         <StatusBadge status={doacao.status} />
         <span

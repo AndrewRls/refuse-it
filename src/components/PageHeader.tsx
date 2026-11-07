@@ -11,10 +11,7 @@ interface PageHeaderProps {
 
 export default function PageHeader({ titulo, rotulo, descricao, acao }: PageHeaderProps) {
   return (
-    <section className="relative isolate overflow-hidden bg-brand-900 text-white">
-      <div aria-hidden="true" className="absolute -top-24 -right-16 -z-10 h-80 w-80 rounded-full bg-brand-500/25 blur-3xl" />
-      <div aria-hidden="true" className="absolute -bottom-32 left-1/4 -z-10 h-72 w-72 rounded-full bg-white/10 blur-3xl" />
-
+    <section className="bg-brand-900 text-white">
       <div className="mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-6 px-4 pt-12 pb-16 sm:px-6">
         <div>
           <nav aria-label="Trilha de navegação">
@@ -29,7 +26,6 @@ export default function PageHeader({ titulo, rotulo, descricao, acao }: PageHead
         </div>
         {acao}
       </div>
-
       <div className="h-1.5 bg-linear-to-r from-brand-500 to-brand-700" />
     </section>
   )

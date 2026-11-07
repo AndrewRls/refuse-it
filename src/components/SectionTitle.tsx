@@ -10,14 +10,14 @@ export default function SectionTitle({ eyebrow, title, subtitle, center = false,
   return (
     <div className={center ? 'mx-auto max-w-2xl text-center' : 'max-w-2xl'}>
       {eyebrow && (
-        <span
-          className={`inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-xs font-bold ${
-            claro ? 'bg-white/10 text-white ring-1 ring-white/20' : 'bg-brand-50 text-brand-700 ring-1 ring-brand-100'
-          }`}
+        <p
+          className={`flex items-center gap-3 text-xs font-bold tracking-widest uppercase ${
+            center ? 'justify-center' : ''
+          } ${claro ? 'text-brand-500' : 'text-brand-700'}`}
         >
-          <span className="h-1.5 w-1.5 rounded-full bg-brand-500" />
+          <span className="h-px w-8 bg-current" />
           {eyebrow}
-        </span>
+        </p>
       )}
       <h2 className={`mt-4 text-3xl sm:text-4xl ${claro ? 'text-white' : ''}`}>{title}</h2>
       {subtitle && (
