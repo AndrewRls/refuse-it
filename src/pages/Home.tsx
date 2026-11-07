@@ -1,10 +1,8 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import {
-  ArrowRight, ArrowUpRight, Building2, CalendarCheck, ChevronDown, CircleCheck, HeartHandshake, Leaf,
-  PackageOpen, PackagePlus, Recycle, Scale, Search, ShieldCheck, Store, TrendingUp, Truck, Wheat,
+  ArrowUpRight, ChevronDown, CircleCheck, HeartHandshake, Leaf, PackageOpen, PackagePlus, Search, ShieldCheck, Truck,
 } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
 import Avatar from '../components/Avatar'
 import Button from '../components/Button'
 import DoacaoCard from '../components/DoacaoCard'
@@ -24,36 +22,42 @@ import { diasParaVencer } from '../utils/format'
 
 type Perfil = 'doador' | 'instituicao'
 
-interface Passo {
-  icon: LucideIcon
-  titulo: string
-  texto: string
-}
-
 const atalhos = [
-  { icon: PackagePlus, titulo: 'Publicar doação', foto: 'card-doar', to: '/doacoes/nova' },
-  { icon: Search, titulo: 'Encontrar alimentos', foto: 'card-reservar', to: '/doacoes' },
-  { icon: ShieldCheck, titulo: 'Manuseio seguro', foto: 'card-seguranca', to: '/faq' },
-  { icon: Truck, titulo: 'Retirada rápida', foto: 'card-entrega', to: '/painel' },
+  { icon: PackagePlus, titulo: 'Publicar doação', foto: ['card-doar', 'foto-1'], to: '/doacoes/nova' },
+  { icon: Search, titulo: 'Encontrar alimentos', foto: ['card-reservar', 'foto-2'], to: '/doacoes' },
+  { icon: ShieldCheck, titulo: 'Manuseio seguro', foto: ['card-seguranca', 'foto-3'], to: '/faq' },
+  { icon: Truck, titulo: 'Retirada rápida', foto: ['card-entrega', 'foto-4'], to: '/painel' },
 ]
 
-const servicos = [
-  { icon: PackagePlus, titulo: 'Publicação de doações', texto: 'Estabelecimentos informam quantidade, validade e prazo de retirada em poucos passos.' },
-  { icon: CalendarCheck, titulo: 'Reserva de alimentos', texto: 'Instituições reservam só o que precisam, e a quantidade disponível se atualiza na hora.' },
-  { icon: Truck, titulo: 'Entrega e retirada', texto: 'Agendamento e acompanhamento até a conclusão, com responsável definido.' },
-  { icon: TrendingUp, titulo: 'Impacto medido', texto: 'O painel mostra quanto alimento foi reaproveitado, entrega por entrega.' },
+const etapas = [
+  {
+    titulo: 'Publicação',
+    texto: 'O estabelecimento escolhe o alimento e informa a quantidade, a validade, como armazenar e até quando dá para retirar.',
+  },
+  {
+    titulo: 'Reserva',
+    texto: 'A instituição escolhe quanto precisa e faz o pedido. O doador analisa e aprova ou recusa.',
+  },
+  {
+    titulo: 'Entrega ou retirada',
+    texto: 'Com o pedido aprovado, o doador agenda dia e horário e define quem leva ou quem busca.',
+  },
+  {
+    titulo: 'Acompanhamento',
+    texto: 'O painel mostra reservas, entregas e o total de alimento que foi realmente reaproveitado.',
+  },
 ]
 
-const passos: Record<Perfil, Passo[]> = {
+const passos: Record<Perfil, { titulo: string; texto: string }[]> = {
   doador: [
-    { icon: Store, titulo: 'Cadastre seu estabelecimento', texto: 'Restaurantes, mercados, padarias e produtores entram em poucos minutos.' },
-    { icon: PackagePlus, titulo: 'Publique o alimento', texto: 'Informe quantidade, validade, armazenamento e prazo de retirada.' },
-    { icon: Truck, titulo: 'Acompanhe a entrega', texto: 'Aprove reservas e acompanhe a retirada ou entrega até o fim.' },
+    { titulo: 'Cadastre o estabelecimento', texto: 'Restaurante, mercado, padaria ou produtor. O cadastro leva poucos minutos.' },
+    { titulo: 'Publique o que sobrou', texto: 'Informe quantidade, validade, armazenamento e prazo de retirada.' },
+    { titulo: 'Acompanhe a entrega', texto: 'Aprove os pedidos e acompanhe a retirada ou entrega até o fim.' },
   ],
   instituicao: [
-    { icon: HeartHandshake, titulo: 'Cadastre sua instituição', texto: 'ONGs, abrigos e cozinhas comunitárias podem participar.' },
-    { icon: Search, titulo: 'Encontre alimentos', texto: 'Filtre por categoria, cidade e validade e escolha o que atende sua comunidade.' },
-    { icon: CalendarCheck, titulo: 'Reserve e combine', texto: 'Solicite a quantidade que precisa e agende retirada ou entrega.' },
+    { titulo: 'Cadastre a instituição', texto: 'ONGs, abrigos e cozinhas comunitárias podem participar.' },
+    { titulo: 'Escolha os alimentos', texto: 'Filtre por categoria, cidade e validade e veja o que atende sua comunidade.' },
+    { titulo: 'Reserve e combine a retirada', texto: 'Peça a quantidade que precisa e agende retirada ou entrega.' },
   ],
 }
 
@@ -61,29 +65,15 @@ const cuidados = [
   'Apenas alimentos próprios para consumo, dentro da validade.',
   'Condição de armazenamento sempre informada ao publicar.',
   'Embalagens íntegras e alimentos higienizados.',
-  'Prazo de retirada realista para a instituição buscar a tempo.',
+  'Prazo de retirada realista, para a instituição buscar a tempo.',
 ]
 
 const ods = [
-  { numero: 2, icon: Wheat, titulo: 'Fome zero', texto: 'Alimento de qualidade chegando a quem tem dificuldade de acesso.' },
-  { numero: 10, icon: Scale, titulo: 'Redução das desigualdades', texto: 'Conectamos quem tem sobra a quem tem falta.' },
-  { numero: 11, icon: Building2, titulo: 'Cidades sustentáveis', texto: 'Menos resíduo orgânico nos aterros das cidades.' },
-  { numero: 12, icon: Leaf, titulo: 'Consumo responsável', texto: 'Produção e consumo mais conscientes, sem desperdício.' },
+  { numero: '2', titulo: 'Fome zero', texto: 'Alimento chegando a quem tem dificuldade de acesso.' },
+  { numero: '10', titulo: 'Redução das desigualdades', texto: 'Quem tem sobra e quem tem falta no mesmo lugar.' },
+  { numero: '11', titulo: 'Cidades sustentáveis', texto: 'Menos resíduo orgânico indo para o aterro.' },
+  { numero: '12', titulo: 'Consumo responsável', texto: 'Aproveitar o que já foi produzido.' },
 ]
-
-function Servico({ icon: Icon, titulo, texto, invertido = false }: { icon: LucideIcon; titulo: string; texto: string; invertido?: boolean }) {
-  return (
-    <div className={`flex gap-4 ${invertido ? 'lg:flex-row-reverse lg:text-right' : ''}`}>
-      <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-2xl bg-brand-500 text-ink">
-        <Icon size={26} />
-      </span>
-      <div>
-        <h3 className="text-lg text-white">{titulo}</h3>
-        <p className="mt-1 text-sm leading-relaxed text-white/75">{texto}</p>
-      </div>
-    </div>
-  )
-}
 
 function Destaques() {
   const { data, loading, error, reload } = useFetch(carregarCatalogo)
@@ -96,13 +86,11 @@ function Destaques() {
   return (
     <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
       <div className="flex flex-wrap items-end justify-between gap-4">
-        <Reveal>
-          <SectionTitle
-            eyebrow="Disponíveis agora"
-            title="Doações em destaque"
-            subtitle="Os alimentos que vencem primeiro aparecem aqui. Reserve antes que acabem."
-          />
-        </Reveal>
+        <SectionTitle
+          eyebrow="Disponíveis agora"
+          title="Doações em destaque"
+          subtitle="Os alimentos que vencem primeiro aparecem aqui. Reserve antes que acabem."
+        />
         <Button to="/doacoes" variant="secondary" seta>
           Ver todas
         </Button>
@@ -141,7 +129,7 @@ export default function Home() {
     <>
       {/* HERO */}
       <section className="relative isolate flex min-h-[640px] items-end overflow-hidden bg-brand-900 text-white lg:min-h-[740px]">
-        <Foto nome="hero" alt="Pessoa separando alimentos frescos para doação" prioritaria className="absolute inset-0 -z-10 h-full w-full" />
+        <Foto nome={['hero', 'foto-1']} alt="Pessoa separando alimentos frescos para doação" prioritaria className="absolute inset-0 -z-10 h-full w-full" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-r from-black/75 via-black/45 to-black/10" />
 
         <div className="mx-auto grid w-full max-w-7xl items-end gap-10 px-4 pt-40 pb-44 sm:px-6 lg:grid-cols-[1.5fr_1fr]">
@@ -171,7 +159,7 @@ export default function Home() {
           </div>
 
           <Link to="/doacoes" className="group relative hidden h-52 overflow-hidden rounded-3xl ring-1 ring-white/30 lg:block">
-            <Foto nome="hero-card" alt="Alimentos disponíveis para doação" className="h-full w-full transition duration-500 group-hover:scale-105" />
+            <Foto nome={['hero-card', 'foto-6']} alt="Alimentos disponíveis para doação" className="h-full w-full transition duration-500 group-hover:scale-105" />
             <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-black/70 to-transparent" />
             <div className="absolute inset-x-0 bottom-0 flex items-center justify-between p-5">
               <p className="max-w-40 text-sm font-bold text-white">Alimentos disponíveis agora</p>
@@ -188,7 +176,7 @@ export default function Home() {
         <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
           {atalhos.map((a, i) => (
             <Reveal key={a.titulo} delay={i * 80} className="h-full">
-              <Link to={a.to} className="group relative block h-72 overflow-hidden rounded-3xl bg-brand-900 shadow-xl shadow-black/15">
+              <Link to={a.to} className="group relative block h-72 overflow-hidden rounded-3xl bg-brand-900 shadow-lg shadow-black/20">
                 <Foto nome={a.foto} alt="" icon={a.icon} className="h-full w-full transition duration-500 group-hover:scale-105" />
                 <div aria-hidden="true" className="absolute inset-0 bg-linear-to-t from-black/80 via-black/20 to-transparent" />
                 <p className="absolute bottom-5 left-5 max-w-36 text-lg leading-tight font-bold text-white">{a.titulo}</p>
@@ -206,8 +194,8 @@ export default function Home() {
         <div className="grid items-center gap-16 lg:grid-cols-2">
           <Reveal>
             <div className="relative mx-auto h-[500px] w-full max-w-lg">
-              <Foto nome="sobre-1" alt="Feira com frutas e verduras frescas" className="absolute top-0 left-0 h-[420px] w-3/5 rounded-3xl" />
-              <Foto nome="sobre-2" alt="Voluntária organizando caixas de alimentos" icon={HeartHandshake} className="absolute right-0 bottom-0 h-72 w-1/2 rounded-3xl ring-8 ring-white" />
+              <Foto nome={['sobre-1', 'foto-5']} alt="Feira com frutas e verduras frescas" className="absolute top-0 left-0 h-[420px] w-3/5 rounded-3xl" />
+              <Foto nome={['sobre-2', 'foto-6']} alt="Voluntária organizando caixas de alimentos" icon={HeartHandshake} className="absolute right-0 bottom-0 h-72 w-1/2 rounded-3xl ring-8 ring-white" />
 
               <div className="absolute top-[58%] left-[38%] z-10 flex h-36 w-36 items-center justify-center rounded-full bg-brand-900 text-white shadow-xl ring-8 ring-white">
                 <svg viewBox="0 0 120 120" className="absolute inset-0 motion-safe:animate-spin-slow" aria-hidden="true">
@@ -229,22 +217,18 @@ export default function Home() {
           </Reveal>
 
           <Reveal delay={100}>
-            <SectionTitle
-              eyebrow="Sobre nós"
-              title="Transformando o descarte responsável em um futuro melhor"
-              subtitle="Restaurantes, mercados e pequenos produtores descartam alimentos que ainda servem, enquanto comunidades inteiras enfrentam dificuldade de acesso à comida. Nós ligamos as duas pontas."
-            />
-
-            <div className="mt-8 flex items-center gap-4 rounded-full bg-white p-3 pr-6 ring-1 ring-brand-100">
-              <span className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-brand-50 text-brand-700 ring-1 ring-brand-100">
-                <Recycle size={26} />
-              </span>
-              <p className="text-sm font-bold text-brand-900">Comprometidos com a doação segura e sustentável</p>
-            </div>
-
+            <SectionTitle eyebrow="Sobre nós" title="Comida boa não deveria ir para o lixo" />
+            <p className="mt-5 leading-relaxed text-ink/70">
+              Padarias, mercados e produtores jogam fora, todo dia, alimento que ainda está bom. Do outro lado, cozinhas
+              comunitárias e abrigos têm dificuldade para comprar comida. O Refuse It coloca os dois no mesmo lugar: quem
+              tem sobra publica, quem precisa reserva e retira.
+            </p>
+            <p className="mt-6 border-l-4 border-brand-500 pl-4 text-sm font-semibold text-brand-900">
+              O primeiro dos 5 Rs do zero waste é recusar. Daí vem o nome.
+            </p>
             <div className="mt-8 flex flex-wrap items-center gap-5">
               <Button to="/sobre" seta>
-                Saiba mais
+                Conheça o projeto
               </Button>
               <Link to="/contato" className="text-sm font-bold text-brand-700 hover:text-brand-900">
                 Fale com a equipe
@@ -254,37 +238,27 @@ export default function Home() {
         </div>
       </section>
 
-      {/* SERVIÇOS (fundo escuro) */}
-      <section className="relative overflow-hidden bg-brand-900 py-24 text-white">
-        <div aria-hidden="true" className="absolute -top-24 -left-24 h-96 w-96 rounded-full bg-brand-500/15 blur-3xl" />
-        <div className="relative mx-auto max-w-7xl px-4 sm:px-6">
+      {/* COMO FUNCIONA (fundo escuro) */}
+      <section className="bg-brand-900 py-24 text-white">
+        <div className="mx-auto grid max-w-7xl items-center gap-14 px-4 sm:px-6 lg:grid-cols-2">
           <Reveal>
-            <SectionTitle
-              center
-              claro
-              eyebrow="O que fazemos"
-              title="Tudo o que a doação precisa, em um só lugar"
-            />
+            <Foto nome={['servicos', 'foto-3']} alt="Voluntários separando alimentos em caixas" icon={PackagePlus} className="h-[520px] w-full rounded-3xl" />
           </Reveal>
 
-          <div className="mt-16 grid items-center gap-12 lg:grid-cols-[1fr_auto_1fr]">
-            <div className="space-y-10">
-              <Reveal><Servico {...servicos[0]} /></Reveal>
-              <Reveal delay={80}><Servico {...servicos[1]} /></Reveal>
-            </div>
-
-            <div className="relative mx-auto flex h-72 w-72 items-center justify-center">
-              <div aria-hidden="true" className="absolute inset-0 rounded-full border-2 border-dashed border-brand-500/60 motion-safe:animate-spin-slow" />
-              <div className="flex h-56 w-56 items-center justify-center rounded-full bg-white/10 ring-1 ring-white/20">
-                <Recycle size={110} className="text-brand-500" strokeWidth={1.25} />
-              </div>
-            </div>
-
-            <div className="space-y-10">
-              <Reveal><Servico {...servicos[2]} invertido /></Reveal>
-              <Reveal delay={80}><Servico {...servicos[3]} invertido /></Reveal>
-            </div>
-          </div>
+          <Reveal delay={100}>
+            <SectionTitle claro eyebrow="Como funciona" title="O caminho do alimento, na prática" />
+            <ol className="mt-8">
+              {etapas.map((e, i) => (
+                <li key={e.titulo} className="flex gap-6 border-t border-white/15 py-6">
+                  <span className="w-12 shrink-0 text-3xl font-extrabold text-brand-500">0{i + 1}</span>
+                  <div>
+                    <h3 className="text-lg text-white">{e.titulo}</h3>
+                    <p className="mt-1 text-sm leading-relaxed text-white/75">{e.texto}</p>
+                  </div>
+                </li>
+              ))}
+            </ol>
+          </Reveal>
         </div>
       </section>
 
@@ -292,24 +266,18 @@ export default function Home() {
       <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <div className="grid items-center gap-14 lg:grid-cols-2">
           <Reveal>
-            <div className="relative">
-              <Foto nome="seguranca" alt="Cozinha organizada com alimentos bem armazenados" icon={ShieldCheck} className="h-[440px] w-full rounded-3xl" />
-              <div className="absolute -right-2 -bottom-6 hidden items-center gap-3 rounded-2xl bg-brand-900 p-4 text-white shadow-xl sm:flex">
-                <ShieldCheck size={26} className="text-brand-500" />
-                <p className="max-w-40 text-sm font-bold">Segurança alimentar em primeiro lugar</p>
-              </div>
-            </div>
+            <Foto nome={['seguranca', 'foto-2']} alt="Cozinha organizada com alimentos bem armazenados" icon={ShieldCheck} className="h-[440px] w-full rounded-3xl" />
           </Reveal>
 
           <Reveal delay={100}>
             <SectionTitle
-              eyebrow="Segurança"
-              title="Garantindo o manuseio seguro e a doação sustentável"
-              subtitle="Doar bem é doar com cuidado. Estes são os princípios que a plataforma reforça em cada publicação."
+              eyebrow="Segurança alimentar"
+              title="Doar com segurança"
+              subtitle="Doar bem é doar com cuidado. Estes são os pontos que a plataforma pede a cada publicação."
             />
-            <ul className="mt-8 space-y-3">
+            <ul className="mt-8">
               {cuidados.map((c) => (
-                <li key={c} className="flex gap-3 rounded-2xl bg-brand-50 p-4 text-sm font-semibold text-brand-900 ring-1 ring-brand-100">
+                <li key={c} className="flex gap-3 border-b border-brand-100 py-4 text-sm font-semibold text-brand-900">
                   <CircleCheck size={20} className="mt-0.5 shrink-0 text-brand-700" />
                   {c}
                 </li>
@@ -332,40 +300,32 @@ export default function Home() {
       {/* PASSOS */}
       <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <Reveal>
-          <SectionTitle center eyebrow="Passo a passo" title="Passos simples para uma doação que chega ao destino" />
+          <SectionTitle eyebrow="Passo a passo" title="Da publicação à retirada, em três passos" />
         </Reveal>
 
-        <div className="mt-10 flex justify-center">
-          <div role="tablist" aria-label="Perfil" className="inline-flex rounded-full bg-brand-50 p-1.5 ring-1 ring-brand-100">
-            {(['doador', 'instituicao'] as Perfil[]).map((p) => (
-              <button
-                key={p}
-                role="tab"
-                type="button"
-                aria-selected={perfil === p}
-                onClick={() => setPerfil(p)}
-                className={`rounded-full px-5 py-2.5 text-sm font-bold transition ${
-                  perfil === p ? 'bg-brand-700 text-white shadow-md' : 'text-brand-700 hover:text-brand-900'
-                }`}
-              >
-                {p === 'doador' ? 'Sou doador' : 'Sou instituição'}
-              </button>
-            ))}
-          </div>
+        <div role="tablist" aria-label="Perfil" className="mt-8 flex gap-8 border-b border-brand-100">
+          {(['doador', 'instituicao'] as Perfil[]).map((p) => (
+            <button
+              key={p}
+              role="tab"
+              type="button"
+              aria-selected={perfil === p}
+              onClick={() => setPerfil(p)}
+              className={`-mb-px border-b-2 pb-3 text-sm font-bold transition ${
+                perfil === p ? 'border-brand-700 text-brand-900' : 'border-transparent text-ink/50 hover:text-brand-700'
+              }`}
+            >
+              {p === 'doador' ? 'Sou doador' : 'Sou instituição'}
+            </button>
+          ))}
         </div>
 
-        <div role="tabpanel" className="mt-16 grid gap-12 md:grid-cols-3">
+        <div role="tabpanel" className="mt-12 grid gap-10 md:grid-cols-3">
           {passos[perfil].map((p, i) => (
-            <div key={`${perfil}-${p.titulo}`} className="relative text-center">
-              <div className="relative mx-auto flex h-36 w-36 items-center justify-center rounded-full bg-brand-50 shadow-xl ring-8 ring-white shadow-brand-900/10">
-                <p.icon size={44} className="text-brand-700" />
-                <span className="absolute -top-1 -right-1 flex h-10 w-10 items-center justify-center rounded-full bg-brand-700 text-sm font-extrabold text-white">
-                  {i + 1}
-                </span>
-              </div>
-              {i < 2 && <ArrowRight aria-hidden="true" size={28} className="absolute top-14 -right-9 hidden text-brand-500 md:block" />}
-              <h3 className="mt-6 text-lg">{p.titulo}</h3>
-              <p className="mx-auto mt-2 max-w-xs text-sm leading-relaxed text-ink/70">{p.texto}</p>
+            <div key={`${perfil}-${p.titulo}`} className="border-t-2 border-brand-700 pt-6">
+              <p className="text-5xl font-extrabold text-brand-100">0{i + 1}</p>
+              <h3 className="mt-3 text-lg">{p.titulo}</h3>
+              <p className="mt-2 text-sm leading-relaxed text-ink/70">{p.texto}</p>
             </div>
           ))}
         </div>
@@ -373,20 +333,22 @@ export default function Home() {
 
       {/* FAIXA COM FOTO */}
       <section className="relative isolate overflow-hidden py-28 text-white">
-        <Foto nome="faixa" alt="Lavoura e feira com alimentos frescos" className="absolute inset-0 -z-10 h-full w-full" />
+        <Foto nome={['faixa', 'foto-5']} alt="Lavoura e feira com alimentos frescos" className="absolute inset-0 -z-10 h-full w-full" />
         <div aria-hidden="true" className="absolute inset-0 -z-10 bg-brand-900/80" />
         <Reveal>
-          <div className="mx-auto flex max-w-4xl flex-col items-center gap-6 px-4 text-center sm:px-6">
+          <div className="mx-auto max-w-7xl px-4 sm:px-6">
             <p className="text-7xl font-extrabold text-brand-500">⅓</p>
-            <h2 className="text-3xl text-white sm:text-4xl">
-              Um terço de todo o alimento produzido no mundo é perdido ou desperdiçado
+            <h2 className="mt-4 max-w-3xl text-3xl text-white sm:text-4xl">
+              Cerca de um terço de todo o alimento produzido no mundo é perdido ou desperdiçado
             </h2>
-            <p className="max-w-2xl text-white/80">
-              É o que aponta a FAO, o órgão da ONU para alimentação e agricultura. O Refuse It existe para devolver esse alimento a quem precisa.
+            <p className="mt-4 max-w-2xl text-white/80">
+              O dado é da FAO, o órgão da ONU para alimentação e agricultura. O Refuse It existe para devolver parte desse alimento a quem precisa.
             </p>
-            <Button to="/doacoes" variant="accent" seta>
-              Ver alimentos disponíveis
-            </Button>
+            <div className="mt-8">
+              <Button to="/doacoes" variant="accent" seta>
+                Ver alimentos disponíveis
+              </Button>
+            </div>
           </div>
         </Reveal>
       </section>
@@ -394,17 +356,17 @@ export default function Home() {
       {/* EQUIPE */}
       <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
         <Reveal>
-          <SectionTitle center eyebrow="Equipe" title="Conheça quem construiu o Refuse It" />
+          <SectionTitle eyebrow="Equipe" title="Quem fez o projeto" />
         </Reveal>
 
-        <div className="mt-14 flex flex-wrap justify-center gap-6">
+        <div className="mt-12 grid gap-x-6 gap-y-10 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
           {integrantes.map((p, i) => (
-            <Reveal key={p.rm} delay={(i % 3) * 80} className="w-full sm:w-[calc(50%-12px)] lg:w-[calc(33.333%-16px)] xl:w-[calc(20%-20px)]">
-              <article className="flex h-full flex-col items-center rounded-3xl bg-white p-5 text-center ring-1 ring-brand-100 transition duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-brand-900/10">
-                <Avatar nome={p.nome} rm={p.rm} className="h-28 w-28 text-3xl" />
+            <Reveal key={p.rm} delay={(i % 3) * 80}>
+              <article>
+                <Avatar retrato nome={p.nome} rm={p.rm} />
                 <h3 className="mt-4 text-base">{p.nomeCurto}</h3>
                 <p className="text-xs font-bold text-brand-700">{p.funcao}</p>
-                <LinksSociais nome={p.nomeCurto} github={p.github} linkedin={p.linkedin} className="mt-4 justify-center" />
+                <LinksSociais nome={p.nomeCurto} github={p.github} linkedin={p.linkedin} className="mt-3" />
               </article>
             </Reveal>
           ))}
@@ -415,20 +377,15 @@ export default function Home() {
       <section className="bg-brand-50 py-24">
         <div className="mx-auto max-w-7xl px-4 sm:px-6">
           <Reveal>
-            <SectionTitle center eyebrow="Impacto" title="Conectado aos Objetivos de Desenvolvimento Sustentável" />
+            <SectionTitle eyebrow="ODS" title="Objetivos de Desenvolvimento Sustentável" />
           </Reveal>
-          <div className="mt-14 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="mt-12 grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
             {ods.map((o, i) => (
-              <Reveal key={o.numero} delay={i * 80} className="h-full">
-                <div className="h-full rounded-3xl bg-white p-6 ring-1 ring-brand-100 transition duration-300 hover:-translate-y-1.5 hover:shadow-xl hover:shadow-brand-900/10">
-                  <div className="flex items-center gap-3">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-700 text-lg font-extrabold text-white">
-                      {o.numero}
-                    </span>
-                    <o.icon size={22} className="text-brand-500" />
-                  </div>
-                  <h3 className="mt-4 text-base">{`ODS ${o.numero} · ${o.titulo}`}</h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink/70">{o.texto}</p>
+              <Reveal key={o.numero} delay={i * 80}>
+                <div className="border-l-2 border-brand-500 pl-5">
+                  <p className="text-5xl font-extrabold text-brand-700">{o.numero}</p>
+                  <h3 className="mt-2 text-base">{o.titulo}</h3>
+                  <p className="mt-1 text-sm leading-relaxed text-ink/70">{o.texto}</p>
                 </div>
               </Reveal>
             ))}
@@ -436,16 +393,16 @@ export default function Home() {
         </div>
       </section>
 
-      {/* FAQ */}
+      {/* DÚVIDAS */}
       <section className="mx-auto max-w-7xl px-4 py-24 sm:px-6">
-        <div className="grid items-center gap-14 lg:grid-cols-2">
+        <div className="grid items-start gap-14 lg:grid-cols-2">
           <Reveal>
-            <SectionTitle eyebrow="Dúvidas" title="Perguntas frequentes" />
-            <div className="mt-8 space-y-3">
+            <SectionTitle eyebrow="Dúvidas" title="Dúvidas comuns" />
+            <div className="mt-8 border-t border-brand-100">
               {perguntas.slice(0, 4).map((p, i) => {
                 const aberta = faqAberta === i
                 return (
-                  <div key={p.pergunta} className="rounded-2xl bg-white ring-1 ring-brand-100">
+                  <div key={p.pergunta} className="border-b border-brand-100">
                     <h3 className="text-base">
                       <button
                         type="button"
@@ -453,10 +410,10 @@ export default function Home() {
                         aria-expanded={aberta}
                         aria-controls={`home-faq-painel-${i}`}
                         onClick={() => setFaqAberta(aberta ? null : i)}
-                        className="flex w-full items-center justify-between gap-4 rounded-2xl p-5 text-left font-bold text-brand-900 transition hover:bg-brand-50"
+                        className="flex w-full items-center justify-between gap-4 py-5 text-left font-bold text-brand-900 transition hover:text-brand-700"
                       >
                         {p.pergunta}
-                        <ChevronDown size={20} className={`shrink-0 text-brand-700 transition-transform duration-300 ${aberta ? 'rotate-180' : ''}`} />
+                        <ChevronDown size={20} className={`shrink-0 transition-transform duration-300 ${aberta ? 'rotate-180' : ''}`} />
                       </button>
                     </h3>
                     <div
@@ -466,7 +423,7 @@ export default function Home() {
                       className={`grid transition-all duration-300 ${aberta ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
                     >
                       <div className="overflow-hidden">
-                        <p className="px-5 pb-5 text-sm leading-relaxed text-ink/70">{p.resposta}</p>
+                        <p className="pb-5 text-sm leading-relaxed text-ink/70">{p.resposta}</p>
                       </div>
                     </div>
                   </div>
@@ -481,7 +438,7 @@ export default function Home() {
           </Reveal>
 
           <Reveal delay={100}>
-            <Foto nome="faq" alt="Voluntários em uma cozinha comunitária" icon={HeartHandshake} className="h-[460px] w-full rounded-3xl" />
+            <Foto nome={['faq', 'foto-4']} alt="Voluntários em uma cozinha comunitária" icon={HeartHandshake} className="h-[460px] w-full rounded-3xl" />
           </Reveal>
         </div>
       </section>
@@ -489,23 +446,20 @@ export default function Home() {
       {/* CTA */}
       <section className="mx-auto max-w-7xl px-4 sm:px-6">
         <Reveal>
-          <div className="relative overflow-hidden rounded-3xl bg-linear-to-r from-brand-900 to-brand-700 px-6 py-14 text-white sm:px-12">
-            <div aria-hidden="true" className="absolute -top-16 -right-16 h-64 w-64 rounded-full bg-white/10 blur-2xl" />
-            <div className="relative flex flex-col items-start justify-between gap-8 lg:flex-row lg:items-center">
-              <div>
-                <h2 className="text-3xl text-white sm:text-4xl">Pronto para recusar o desperdício?</h2>
-                <p className="mt-3 max-w-xl text-white/80">
-                  Publique um alimento que sobrou ou encontre o que sua comunidade precisa hoje.
-                </p>
-              </div>
-              <div className="flex flex-col gap-3 sm:flex-row">
-                <Button to="/doacoes/nova" variant="accent" seta>
-                  Publicar uma doação
-                </Button>
-                <Button to="/cadastro" variant="secondary">
-                  Criar conta
-                </Button>
-              </div>
+          <div className="flex flex-col items-start justify-between gap-8 rounded-3xl bg-brand-900 px-6 py-12 text-white sm:px-12 lg:flex-row lg:items-center">
+            <div>
+              <h2 className="text-3xl text-white sm:text-4xl">Tem comida sobrando ou precisando de comida?</h2>
+              <p className="mt-3 max-w-xl text-white/80">
+                Publique um alimento ou encontre o que sua comunidade precisa hoje.
+              </p>
+            </div>
+            <div className="flex flex-col gap-3 sm:flex-row">
+              <Button to="/doacoes/nova" variant="accent" seta>
+                Publicar uma doação
+              </Button>
+              <Button to="/cadastro" variant="secondary">
+                Criar conta
+              </Button>
             </div>
           </div>
         </Reveal>
