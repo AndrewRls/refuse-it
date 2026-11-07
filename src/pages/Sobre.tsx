@@ -2,6 +2,7 @@ import { ArrowRight, Building2, CircleCheck, HeartHandshake, Landmark, Leaf, Sca
 import Button from '../components/Button'
 import Reveal from '../components/Reveal'
 import SectionTitle from '../components/SectionTitle'
+import PageHeader from '../components/PageHeader'
 
 const parceiros = [
   {
@@ -37,15 +38,11 @@ const ods = [
 export default function Sobre() {
   return (
     <>
-      <section className="bg-linear-to-b from-brand-50 to-white">
-        <div className="mx-auto max-w-7xl px-4 pt-14 pb-10 sm:px-6">
-          <p className="text-xs font-bold tracking-widest text-brand-700 uppercase">Sobre</p>
-          <h1 className="mt-2 max-w-3xl text-3xl sm:text-5xl">Recusar o desperdício é o primeiro passo</h1>
-          <p className="mt-4 max-w-2xl text-lg leading-relaxed text-ink/70">
-            O Refuse It é uma plataforma de redistribuição de alimentos que liga quem tem comida sobrando a quem precisa dela.
-          </p>
-        </div>
-      </section>
+            <PageHeader
+        titulo="Recusar o desperdício é o primeiro passo"
+        rotulo="Sobre"
+        descricao="O Refuse It é uma plataforma de redistribuição de alimentos que liga quem tem comida sobrando a quem precisa dela."
+      />
 
       {/* Problema e resposta */}
       <section className="mx-auto max-w-7xl px-4 py-12 sm:px-6">

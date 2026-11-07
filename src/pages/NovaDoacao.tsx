@@ -14,6 +14,7 @@ import { dataISO, rotuloUnidade } from '../utils/format'
 import { inputClasses } from '../utils/styles'
 import { useAuth } from '../hooks/useAuth'
 import { dataTextoParaISO, mascararData } from '../utils/forms'
+import PageHeader from '../components/PageHeader'
 interface FormValores {
     idEstabelecimento: string
     idAlimento: string
@@ -168,17 +169,13 @@ export default function NovaDoacao() {
 
     return (
         <>
-            <section className="bg-linear-to-b from-brand-50 to-white">
-                <div className="mx-auto max-w-7xl px-4 pt-14 pb-8 sm:px-6">
-                    <p className="text-xs font-bold tracking-widest text-brand-700 uppercase">Doar</p>
-                    <h1 className="mt-2 text-3xl sm:text-4xl">Publicar uma doação</h1>
-                    <p className="mt-3 max-w-2xl text-ink/70">
-                        Informe o que sobrou. Instituições da sua região poderão reservar e retirar.
-                    </p>
-                </div>
-            </section>
+            <PageHeader
+                titulo="Publicar uma doação"
+                rotulo="Nova doação"
+                descricao="Informe o que sobrou. Instituições da sua região poderão reservar e retirar."
+            />
 
-            <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6">
+            <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
                 {loading && <Spinner texto="Carregando formulário..." />}
                 {!loading && error && <ErrorMessage mensagem={error} onRetry={reload} />}
 

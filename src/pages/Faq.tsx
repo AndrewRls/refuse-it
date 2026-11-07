@@ -5,6 +5,7 @@ import EmptyState from '../components/EmptyState'
 import { categoriasFaq, perguntas } from '../data/faq'
 import type { CategoriaFaq } from '../data/faq'
 import { semAcento } from '../utils/format'
+import PageHeader from '../components/PageHeader'
 
 type Filtro = CategoriaFaq | 'Todas'
 
@@ -22,15 +23,13 @@ export default function Faq() {
 
   return (
     <>
-      <section className="bg-linear-to-b from-brand-50 to-white">
-        <div className="mx-auto max-w-7xl px-4 pt-14 pb-8 sm:px-6">
-          <p className="text-xs font-bold tracking-widest text-brand-700 uppercase">Ajuda</p>
-          <h1 className="mt-2 text-3xl sm:text-4xl">Perguntas frequentes</h1>
-          <p className="mt-3 max-w-2xl text-ink/70">Tire suas dúvidas sobre doações, reservas e segurança alimentar.</p>
-        </div>
-      </section>
+            <PageHeader
+        titulo="Perguntas frequentes"
+        rotulo="FAQ"
+        descricao="Tire suas dúvidas sobre doações, reservas e segurança alimentar."
+      />
 
-      <section className="mx-auto max-w-3xl px-4 pb-8 sm:px-6">
+      <section className="mx-auto max-w-3xl px-4 py-10 sm:px-6">
         <div className="relative">
           <label htmlFor="busca-faq" className="sr-only">Buscar nas perguntas</label>
           <Search size={18} className="pointer-events-none absolute top-1/2 left-4 -translate-y-1/2 text-brand-500" />

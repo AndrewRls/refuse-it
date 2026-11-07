@@ -10,6 +10,7 @@ import { useFetch } from '../hooks/useFetch'
 import { carregarCatalogo } from '../services/catalogoService'
 import type { DoacaoView } from '../types'
 import { diasParaVencer, semAcento } from '../utils/format'
+import PageHeader from '../components/PageHeader'
 
 const ordenacoes = {
   validade: 'Validade mais próxima',
@@ -20,7 +21,7 @@ const ordenacoes = {
 type Ordenacao = keyof typeof ordenacoes
 
 const campo =
-  'w-full rounded-2xl border-0 bg-white px-4 py-3 text-sm ring-1 ring-brand-100 transition focus:ring-2 focus:ring-brand-700 focus:outline-none'
+  'w-full rounded-2xl border-0 bg-brand-50 px-4 py-3 text-sm ring-1 ring-brand-100 transition focus:ring-2 focus:ring-brand-700 focus:outline-none'
 
 function estaDisponivel(d: DoacaoView): boolean {
   return (
@@ -84,21 +85,17 @@ export default function Catalogo() {
 
   return (
     <>
-      <section className="bg-linear-to-b from-brand-50 to-white">
-        <div className="mx-auto max-w-7xl px-4 pt-14 pb-8 sm:px-6">
-          <p className="text-xs font-bold tracking-widest text-brand-700 uppercase">Catálogo</p>
-          <h1 className="mt-2 text-3xl sm:text-4xl">Alimentos disponíveis para doação</h1>
-          <p className="mt-3 max-w-2xl text-ink/70">
-            Encontre o que sua instituição precisa, perto de você, antes que a validade chegue.
-          </p>
-        </div>
-      </section>
+            <PageHeader
+        titulo="Alimentos disponíveis para doação"
+        rotulo="Catálogo"
+        descricao="Encontre o que sua instituição precisa, perto de você, antes que a validade chegue."
+      />
 
       <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6">
         {/* Filtros */}
         <form
           onSubmit={(e) => e.preventDefault()}
-          className="-mt-2 rounded-3xl bg-brand-50 p-5 ring-1 ring-brand-100"
+          className="relative z-10 -mt-10 rounded-3xl bg-white p-5 shadow-xl shadow-brand-900/10 ring-1 ring-brand-100"
           aria-label="Filtros do catálogo"
         >
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">

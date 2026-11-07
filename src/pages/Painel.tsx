@@ -8,6 +8,7 @@ import CountUp from '../components/CountUp'
 import DoacaoLinha from '../components/DoacaoLinha'
 import EmptyState from '../components/EmptyState'
 import ErrorMessage from '../components/ErrorMessage'
+import PageHeader from '../components/PageHeader'
 import ReservaItem from '../components/ReservaItem'
 import Spinner from '../components/Spinner'
 import { useAuth } from '../hooks/useAuth'
@@ -279,23 +280,24 @@ function PainelConteudo({ sessao }: { sessao: Sessao }) {
 
   return (
     <>
-      <section className="bg-linear-to-b from-brand-50 to-white">
-        <div className="mx-auto flex max-w-7xl flex-wrap items-end justify-between gap-4 px-4 pt-14 pb-8 sm:px-6">
-          <div>
-            <p className="text-xs font-bold tracking-widest text-brand-700 uppercase">Painel</p>
-            <h1 className="mt-2 text-3xl sm:text-4xl">Olá, {primeiroNome}</h1>
-            {subtitulo && <p className="mt-2 text-ink/70">{subtitulo}</p>}
-          </div>
-          {perfil === 'DOADOR' && (
-            <Button to="/doacoes/nova">
+            <PageHeader
+        titulo={`Olá, ${primeiroNome}`}
+        rotulo="Painel"
+        descricao={subtitulo}
+        acao={
+          perfil === 'DOADOR' ? (
+            <Button to="/doacoes/nova" variant="accent">
               <Plus size={18} /> Publicar doação
             </Button>
-          )}
-          {perfil === 'INSTITUICAO' && <Button to="/doacoes">Explorar alimentos</Button>}
-        </div>
-      </section>
+          ) : perfil === 'INSTITUICAO' ? (
+            <Button to="/doacoes" variant="accent">
+              Explorar alimentos
+            </Button>
+          ) : undefined
+        }
+      />
 
-      <section className="mx-auto max-w-7xl px-4 pb-8 sm:px-6">
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
         {aviso && (
           <div
             role={aviso.tipo === 'erro' ? 'alert' : 'status'}
