@@ -16,7 +16,7 @@ interface AvatarProps {
 
 export default function Avatar({ nome, rm, className = 'h-16 w-16 text-xl', retrato = false }: AvatarProps) {
   const src = fotoIntegrante(rm)
-  const forma = retrato ? 'aspect-[4/5] w-full rounded-lg' : `shrink-0 rounded-full ring-4 ring-brand-100 ${className}`
+  const forma = retrato ? 'aspect-[4/5] w-full rounded-[30%_0_30%_0]' : `shrink-0 rounded-[30%_0_30%_0] ${className}`
 
   if (src) {
     return <img src={src} alt={`Foto de ${nome}`} className={`object-cover object-top ${forma}`} />
