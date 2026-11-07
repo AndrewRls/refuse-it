@@ -59,19 +59,21 @@ export default function Faq() {
           ))}
         </div>
 
-        <div className="mt-8 space-y-3">
+                <div className="mt-8 border-t border-brand-100">
           {lista.length === 0 ? (
-            <EmptyState
-              icon={SearchX}
-              titulo="Nenhuma pergunta encontrada"
-              texto="Tente outras palavras ou fale com a gente."
-              action={<Button to="/contato">Falar com a equipe</Button>}
-            />
+            <div className="pt-8">
+              <EmptyState
+                icon={SearchX}
+                titulo="Nenhuma pergunta encontrada"
+                texto="Tente outras palavras ou fale com a gente."
+                action={<Button to="/contato">Falar com a equipe</Button>}
+              />
+            </div>
           ) : (
             lista.map((p, i) => {
               const aberto = aberta === p.pergunta
               return (
-                <div key={p.pergunta} className="rounded-2xl bg-white ring-1 ring-brand-100">
+                <div key={p.pergunta} className="border-b border-brand-100">
                   <h2 className="text-base">
                     <button
                       type="button"
@@ -79,7 +81,7 @@ export default function Faq() {
                       aria-expanded={aberto}
                       aria-controls={`faq-painel-${i}`}
                       onClick={() => setAberta(aberto ? null : p.pergunta)}
-                      className="flex w-full items-center justify-between gap-4 rounded-2xl p-5 text-left transition hover:bg-brand-50"
+                      className="flex w-full items-center justify-between gap-4 py-5 text-left transition hover:text-brand-700"
                     >
                       <span>
                         <span className="block text-xs font-bold tracking-wide text-brand-700 uppercase">{p.categoria}</span>
@@ -95,7 +97,7 @@ export default function Faq() {
                     className={`grid transition-all duration-300 ${aberto ? 'grid-rows-[1fr]' : 'grid-rows-[0fr]'}`}
                   >
                     <div className="overflow-hidden">
-                      <p className="px-5 pb-5 text-sm leading-relaxed text-ink/70">{p.resposta}</p>
+                      <p className="pb-5 text-sm leading-relaxed text-ink/70">{p.resposta}</p>
                     </div>
                   </div>
                 </div>
