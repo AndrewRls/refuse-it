@@ -15,7 +15,7 @@ function ScrollToTop() {
 
 export default function Layout() {
   return (
-    <div className="flex min-h-screen flex-col overflow-x-hidden">
+    <div className="flex min-h-screen flex-col overflow-x-clip">
       <ScrollToTop />
       <Navbar />
       <main className="flex-1">

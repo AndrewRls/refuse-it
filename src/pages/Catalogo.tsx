@@ -7,8 +7,8 @@ import ErrorMessage from '../components/ErrorMessage'
 import Reveal from '../components/Reveal'
 import Spinner from '../components/Spinner'
 import { useFetch } from '../hooks/useFetch'
+import { podeReservar } from '../utils/doacao'
 import { carregarCatalogo } from '../services/catalogoService'
-import type { DoacaoView } from '../types'
 import { diasParaVencer, semAcento } from '../utils/format'
 import PageHeader from '../components/PageHeader'
 
@@ -23,13 +23,7 @@ type Ordenacao = keyof typeof ordenacoes
 const campo =
   'w-full rounded-2xl border-0 bg-brand-50 px-4 py-3 text-sm ring-1 ring-brand-100 transition focus:ring-2 focus:ring-brand-700 focus:outline-none'
 
-function estaDisponivel(d: DoacaoView): boolean {
-  return (
-    (d.status === 'DISPONIVEL' || d.status === 'PARCIALMENTE_RESERVADA') &&
-    d.quantidadeDisponivel > 0 &&
-    diasParaVencer(d.dataValidade) >= 0
-  )
-}
+
 
 export default function Catalogo() {
   const { data, loading, error, reload } = useFetch(carregarCatalogo)
@@ -58,7 +52,7 @@ export default function Catalogo() {
     const termo = semAcento(busca.trim())
 
     return doacoes
-      .filter((d) => (apenasDisponiveis ? estaDisponivel(d) : true))
+      .filter((d) => (apenasDisponiveis ? podeReservar(d) : true))
       .filter((d) => (categoria ? d.alimento?.categoria === categoria : true))
       .filter((d) => (cidade ? d.estabelecimento?.cidade === cidade : true))
       .filter((d) => {

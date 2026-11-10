@@ -37,13 +37,13 @@ React, TypeScript, Vite, Tailwind CSS, React Router, Lucide React, Fetch API e E
 
 ## Integrantes
 
-| Nome | RM | Turma |
-|---|---|---|
-| Andrew Rodrigues Lima da Silva | RM573777 | 1TDS |
-| Bryan Costa Silva | RM569439 | 1TDS |
-| Luis Henrique Rondão Mendonça | RM569797 | 1TDS |
-| Igor Blacconaro Santos | RM572033 | 1TDS |
-| Luis Felipe Fernandes Esteves | RM569064 | 1TDS |
+| Nome | RM | Turma | Função |
+|---|---|---|---|
+| Andrew Rodrigues Lima da Silva | RM573777 | 1TDSPF | Front-end |
+| Bryan Costa Silva | RM569439 | 1TDSPF | Back-end (Java) |
+| Igor Blacconaro Santos | RM572033 | 1TDSPF | Banco de dados e Python |
+| Luis Henrique Rondão Mendonça | RM569797 | 1TDSPO | Chatbot e IA |
+| Luis Felipe Fernandes Esteves | RM569064 | 1TDSPF | Engenharia de software e negócio |
 
 ## Como executar
 
@@ -63,12 +63,8 @@ A aplicação abre em `http://localhost:5173`. Copie `.env.example` para `.env` 
 
 ## Contato
 
-Os integrantes estão na página de Contato da aplicação, com GitHub e LinkedIn de cada um:
-
-| Nome | RM | Turma | Função |
-|---|---|---|---|
-| Andrew Rodrigues Lima da Silva | RM573777 | 1TDSPF | Front-end |
-| Bryan Costa Silva | RM569439 | 1TDSPF | Back-end (Java) |
-| Igor Blacconaro Santos | RM572033 | 1TDSPF | Banco de dados e Python |
-| Luis Henrique Rondão Mendonça | RM569797 | 1TDSPO | Chatbot e IA |
-| Luis Felipe Fernandes Esteves | RM569064 | 1TDSPF | Engenharia de software e negócio |
+- Andrew: [GitHub](https://github.com/AndrewRls) · [LinkedIn](https://www.linkedin.com/in/andrew-rls)
+- Bryan: [GitHub](https://github.com/BryanC0staDev) · [LinkedIn](https://www.linkedin.com/in/bryan-costa-silva/)
+- Igor: [GitHub](https://github.com/igorblacconaro) · [LinkedIn](https://www.linkedin.com/in/igorblacconaro)
+- Luis Henrique: [GitHub](https://github.com/luishdev0) · [LinkedIn](https://www.linkedin.com/in/luis-rondao)
+- Luis Felipe: [GitHub](https://github.com/dev-luisfernandes) · [LinkedIn](https://www.linkedin.com/in/luis-f-b2a3983b3/)

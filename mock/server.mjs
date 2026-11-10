@@ -17,6 +17,29 @@ const campoId = {
 }
 for (const recurso of Object.keys(campoId)) db[recurso] ??= []
 
+// Datas de demonstração sempre relativas a HOJE (assim nada "vence" com o passar dos dias)
+const somarDias = (n) => {
+  const d = new Date()
+  d.setDate(d.getDate() + n)
+  return d.toLocaleDateString('sv-SE') // AAAA-MM-DD
+}
+const prazos = { 1: [3, 2], 2: [6, 5], 3: [5, 4], 4: [4, 3], 5: [2, 1], 6: [3, 2], 7: [-3, -4] }
+for (const d of db.doacoes) {
+  const p = prazos[d.idDoacao]
+  if (!p) continue
+  d.dataValidade = somarDias(p[0])
+  d.dataLimiteRetirada = somarDias(p[1])
+  d.dataPublicacao = `${somarDias(d.idDoacao === 7 ? -6 : -1)}T09:00:00`
+}
+for (const r of db.reservas) r.dataReserva = `${somarDias(r.idReserva === 2 ? -4 : -1)}T10:15:00`
+for (const e of db.entregas) {
+  if (e.idEntrega === 1) e.dataAgendada = `${somarDias(1)}T16:00:00`
+  if (e.idEntrega === 2) {
+    e.dataAgendada = `${somarDias(-3)}T16:00:00`
+    e.dataConclusao = `${somarDias(-3)}T16:20:00`
+  }
+}
+
 // A API real nunca devolve a senha
 const semSenha = ({ senha, ...resto }) => resto
 const publico = (recurso, valor) => {
