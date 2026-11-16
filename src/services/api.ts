@@ -8,28 +8,57 @@ export class ApiError extends Error {
   }
 }
 
+function mensagemPadrao(status: number): string {
+  if (status === 400) return 'Os dados enviados não foram aceitos. Confira os campos.'
+  if (status === 401) return 'Não autorizado.'
+  if (status === 404) return 'Não encontrado.'
+  if (status === 409) return 'Essa operação conflita com o estado atual.'
+  if (status >= 500) return 'O servidor encontrou um problema. Tente novamente em instantes.'
+  return `Erro ${status}`
+}
+
+async function lerCorpo(resposta: Response): Promise<unknown> {
+  const texto = await resposta.text()
+  if (!texto) return undefined
+  try {
+    return JSON.parse(texto)
+  } catch {
+    return texto
+  }
+}
+
+function extrairMensagem(corpo: unknown, status: number): string {
+  if (corpo && typeof corpo === 'object') {
+    const objeto = corpo as Record<string, unknown>
+    for (const chave of ['message', 'mensagem', 'erro']) {
+      const valor = objeto[chave]
+      if (typeof valor === 'string' && valor.trim()) return valor
+    }
+  }
+  if (typeof corpo === 'string' && corpo.length > 0 && corpo.length < 200 && !corpo.trimStart().startsWith('<')) {
+    return corpo
+  }
+  return mensagemPadrao(status)
+}
+
 export async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const { headers, ...rest } = options
 
-  let response: Response
+  let resposta: Response
   try {
-    response = await fetch(`${BASE_URL}${path}`, {
-      headers: { 'Content-Type': 'application/json', ...headers },
+    resposta = await fetch(`${BASE_URL}${path}`, {
+      headers: { ...(rest.body ? { 'Content-Type': 'application/json' } : {}), ...headers },
       ...rest,
     })
   } catch {
-    throw new ApiError(0, 'Não foi possível conectar ao servidor. Tente novamente em instantes.')
+    throw new ApiError(
+      0,
+      'Não foi possível conectar ao servidor. Se a API estiver acordando, aguarde cerca de 1 minuto e tente de novo.',
+    )
   }
 
-  if (!response.ok) {
-    let message = `Erro ${response.status}`
-    try {
-      const body = await response.json()
-      message = body.message ?? body.erro ?? message
-    } catch { /* corpo sem JSON */ }
-    throw new ApiError(response.status, message)
-  }
+  const corpo = await lerCorpo(resposta)
+  if (!resposta.ok) throw new ApiError(resposta.status, extrairMensagem(corpo, resposta.status))
 
-  if (response.status === 204) return undefined as T
-  return (await response.json()) as T
+  return corpo as T // fica undefined quando a resposta não tem corpo
 }
