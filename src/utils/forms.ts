@@ -61,3 +61,30 @@ export function isoParaTexto(iso: string): string {
   const [a, m, d] = iso.slice(0, 10).split('-')
   return `${d}/${m}/${a}`
 }
+
+export const mascararCPF = (t: string) => aplicar(apenasDigitos(t).slice(0, 11), '###.###.###-##')
+
+/** Confere os dois dígitos verificadores do CPF. */
+export function cpfValido(valor: string): boolean {
+  const c = apenasDigitos(valor)
+  if (c.length !== 11 || /^(\d)\1+$/.test(c)) return false
+
+  const digito = (base: string) => {
+    const soma = base.split('').reduce((acc, d, i) => acc + Number(d) * (base.length + 1 - i), 0)
+    const resto = (soma * 10) % 11
+    return resto === 10 ? 0 : resto
+  }
+
+  const d1 = digito(c.slice(0, 9))
+  const d2 = digito(c.slice(0, 9) + d1)
+  return c.endsWith(`${d1}${d2}`)
+}
+
+/** Regras de senha da API: 11+ caracteres, 1 maiúscula e 1 especial (!@#$%&*). */
+export function erroSenha(senha: string): string | undefined {
+  if (!senha) return 'Crie uma senha.'
+  if (senha.length < 11) return 'Use pelo menos 11 caracteres.'
+  if (!/[A-Z]/.test(senha)) return 'Inclua pelo menos uma letra maiúscula.'
+  if (!/[!@#$%&*]/.test(senha)) return 'Inclua pelo menos um caractere especial (! @ # $ % & *).'
+  return undefined
+}
