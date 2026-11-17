@@ -5,7 +5,7 @@ import type { DoacaoView } from '../types'
 import { diasParaVencer, formatarData, formatarQuantidade, textoValidade } from '../utils/format'
 
 export default function DoacaoCard({ doacao }: { doacao: DoacaoView }) {
-  const { alimento, estabelecimento } = doacao
+  const { alimento, nomeDoador, cidade, estado } = doacao
   const dias = diasParaVencer(doacao.dataValidade)
   const percentual = Math.round((doacao.quantidadeDisponivel / doacao.quantidadeTotal) * 100)
   const urgente = dias >= 0 && dias <= 1
@@ -27,12 +27,13 @@ export default function DoacaoCard({ doacao }: { doacao: DoacaoView }) {
       <div className="mt-3 space-y-1 text-sm text-ink/70">
         <p className="flex items-center gap-2">
           <Store size={15} className="shrink-0 text-brand-500" />
-          {estabelecimento?.nomeFantasia ?? 'Estabelecimento'}
+          {nomeDoador ?? 'Doador'}
         </p>
-        {estabelecimento && (
+                {cidade && (
           <p className="flex items-center gap-2">
             <MapPin size={15} className="shrink-0 text-brand-500" />
-            {estabelecimento.cidade}, {estabelecimento.estado}
+            {cidade}
+            {estado ? `, ${estado}` : ''}
           </p>
         )}
       </div>

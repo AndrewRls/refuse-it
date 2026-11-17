@@ -9,6 +9,6 @@ const estilos: Record<StatusDoacao, { label: string; classe: string }> = {
 }
 
 export default function StatusBadge({ status }: { status: StatusDoacao }) {
-  const { label, classe } = estilos[status]
+  const { label, classe } = estilos[status] ?? { label: status, classe: 'bg-slate-200 text-slate-700' }
   return <span className={`rounded-full px-3 py-1 text-xs font-bold ${classe}`}>{label}</span>
 }

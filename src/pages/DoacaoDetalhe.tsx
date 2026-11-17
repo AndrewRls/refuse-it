@@ -1,6 +1,6 @@
 import { useCallback } from 'react'
 import { Link, useParams } from 'react-router-dom'
-import { ArrowLeft, CalendarDays, Clock, ExternalLink, MapPin, SearchX, Store, Thermometer, Truck } from 'lucide-react'
+import { ArrowLeft, CalendarDays, Clock, MapPin, SearchX, Store, Thermometer, Truck } from 'lucide-react'
 import Button from '../components/Button'
 import EmptyState from '../components/EmptyState'
 import ErrorMessage from '../components/ErrorMessage'
@@ -39,7 +39,7 @@ function Conteudo({ id }: { id: number }) {
     )
   }
 
-  const { alimento, estabelecimento } = doacao
+  const { alimento, nomeDoador, cidade, estado } = doacao
   const dias = diasParaVencer(doacao.dataValidade)
   const urgente = dias >= 0 && dias <= 1
   const percentual = Math.round((doacao.quantidadeDisponivel / doacao.quantidadeTotal) * 100)
@@ -51,9 +51,7 @@ function Conteudo({ id }: { id: number }) {
     { icon: Clock, rotulo: 'Publicada em', valor: formatarDataHora(doacao.dataPublicacao) },
   ]
 
-  const enderecoCompleto = estabelecimento
-    ? `${estabelecimento.endereco}, ${estabelecimento.cidade} - ${estabelecimento.estado}`
-    : ''
+    const tipoDoador = doacao.idPessoaFisica ? 'Pessoa física' : doacao.idEstabelecimento ? 'Empresa' : null
 
   return (
     <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
@@ -119,31 +117,22 @@ function Conteudo({ id }: { id: number }) {
           </div>
 
           {/* Estabelecimento */}
-          {estabelecimento && (
-            <article className="rounded-3xl bg-white p-6 ring-1 ring-brand-100 sm:p-8">
-              <p className="flex items-center gap-2 text-xs font-bold tracking-widest text-brand-700 uppercase">
-                <Store size={14} /> Quem está doando
-              </p>
-              <h2 className="mt-2 text-xl">{estabelecimento.nomeFantasia}</h2>
-              <p className="text-sm text-ink/60">
-                {estabelecimento.categoria.charAt(0) + estabelecimento.categoria.slice(1).toLowerCase()}
-              </p>
+                    {/* Doador */}
+          <article className="rounded-3xl bg-white p-6 ring-1 ring-brand-100 sm:p-8">
+            <p className="flex items-center gap-2 text-xs font-bold tracking-widest text-brand-700 uppercase">
+              <Store size={14} /> Quem está doando
+            </p>
+            <h2 className="mt-2 text-xl">{nomeDoador ?? 'Doador'}</h2>
+            {tipoDoador && <p className="text-sm text-ink/60">{tipoDoador}</p>}
 
+            {cidade && (
               <p className="mt-4 flex items-start gap-2 text-sm text-ink/70">
                 <MapPin size={16} className="mt-0.5 shrink-0 text-brand-500" />
-                {enderecoCompleto}
+                {cidade}
+                {estado ? ` - ${estado}` : ''}
               </p>
-
-              <a
-                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(enderecoCompleto)}`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 text-sm font-bold text-brand-700 transition hover:text-brand-900"
-              >
-                Ver no mapa <ExternalLink size={14} />
-              </a>
-            </article>
-          )}
+            )}
+          </article>
         </div>
 
         <ReservaCard doacao={doacao} aoAtualizar={refresh} />

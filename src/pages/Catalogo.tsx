@@ -44,7 +44,7 @@ export default function Catalogo() {
 
   const cidades = useMemo(
     () =>
-      [...new Set(doacoes.map((d) => d.estabelecimento?.cidade).filter((c): c is string => Boolean(c)))].sort(),
+      [...new Set(doacoes.map((d) => d.cidade).filter((c): c is string => Boolean(c)))].sort(),
     [doacoes],
   )
 
@@ -54,10 +54,10 @@ export default function Catalogo() {
     return doacoes
       .filter((d) => (apenasDisponiveis ? podeReservar(d) : true))
       .filter((d) => (categoria ? d.alimento?.categoria === categoria : true))
-      .filter((d) => (cidade ? d.estabelecimento?.cidade === cidade : true))
+      .filter((d) => (cidade ? d.cidade === cidade : true))
       .filter((d) => {
         if (!termo) return true
-        const texto = semAcento(`${d.alimento?.nome ?? ''} ${d.estabelecimento?.nomeFantasia ?? ''}`)
+        const texto = semAcento(`${d.alimento?.nome ?? ''} ${d.nomeDoador ?? ''}`)
         return texto.includes(termo)
       })
       .sort((a, b) => {
@@ -102,7 +102,7 @@ export default function Catalogo() {
                   type="search"
                   value={busca}
                   onChange={(e) => setBusca(e.target.value)}
-                  placeholder="Alimento ou estabelecimento"
+                  placeholder="Alimento ou doador"
                   className={`${campo} pl-10`}
                 />
               </div>
@@ -118,15 +118,17 @@ export default function Catalogo() {
               </select>
             </div>
 
-            <div>
-              <label htmlFor="cidade" className="mb-1.5 block text-xs font-bold text-brand-900">Cidade</label>
-              <select id="cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className={campo}>
-                <option value="">Todas</option>
-                {cidades.map((c) => (
-                  <option key={c} value={c}>{c}</option>
-                ))}
-              </select>
-            </div>
+                        {cidades.length > 0 && (
+              <div>
+                <label htmlFor="cidade" className="mb-1.5 block text-xs font-bold text-brand-900">Cidade</label>
+                <select id="cidade" value={cidade} onChange={(e) => setCidade(e.target.value)} className={campo}>
+                  <option value="">Todas</option>
+                  {cidades.map((c) => (
+                    <option key={c} value={c}>{c}</option>
+                  ))}
+                </select>
+              </div>
+            )}
 
             <div>
               <label htmlFor="ordem" className="mb-1.5 block text-xs font-bold text-brand-900">Ordenar por</label>
