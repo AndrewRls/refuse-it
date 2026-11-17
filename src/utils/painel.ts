@@ -7,7 +7,7 @@ export function montarDoacoes(dados: PainelDados): DoacaoView[] {
   return dados.doacoes.map((d) => ({
     ...d,
     alimento: alimentos.get(d.idAlimento),
-    estabelecimento: estabelecimentos.get(d.idEstabelecimento),
+    estabelecimento: estabelecimentos.get(d.idEstabelecimento ?? 0),
   }))
 }
 

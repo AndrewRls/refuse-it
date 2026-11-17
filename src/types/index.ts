@@ -1,4 +1,5 @@
 export type TipoUsuario = 'ADMIN' | 'DOADOR' | 'INSTITUICAO'
+export type TipoConta = 'PESSOA_FISICA' | 'EMPRESA' | 'ONG'
 export type StatusUsuario = 'ATIVO' | 'INATIVO'
 export type CategoriaEstabelecimento = 'RESTAURANTE' | 'MERCADO' | 'PADARIA' | 'PRODUTOR' | 'OUTRO'
 export type UnidadeMedida = 'KG' | 'GRAMA' | 'LITRO' | 'ML' | 'UNIDADE'
@@ -53,7 +54,11 @@ export interface Alimento {
 
 export interface Doacao {
   idDoacao: number
-  idEstabelecimento: number
+  idEstabelecimento: number | null
+  idPessoaFisica?: number | null
+  nomeDoador?: string
+  cidade?: string
+  estado?: string
   idAlimento: number
   quantidadeTotal: number
   quantidadeDisponivel: number
@@ -137,4 +142,23 @@ export interface Indicadores {
   reservasPendentes: number
   reservasAprovadas: number
   reservasConcluidas: number
+}
+
+/** Conta que está usando o sistema. */
+export interface Conta {
+  idUsuario: number
+  nome: string
+  tipo: TipoConta
+}
+
+/** Reserva feita por uma ONG, já normalizada a partir do que a API devolve. */
+export interface MinhaReserva {
+  idReserva: number
+  idDoacao: number
+  quantidadeSolicitada: number
+  status: string
+  dataReserva?: string
+  observacao?: string
+  alimento?: Alimento
+  nomeDoador?: string
 }

@@ -1,30 +1,15 @@
-import { doacaoService } from './doacaoService'
-import { alimentoService } from './alimentoService'
-import { estabelecimentoService } from './estabelecimentoService'
+import { ApiError } from './api'
+import { doacoesApi } from './doacoesApi'
 import type { DoacaoView } from '../types'
 
-export async function carregarCatalogo(): Promise<DoacaoView[]> {
-  const [doacoes, alimentos, estabelecimentos] = await Promise.all([
-    doacaoService.listar(),
-    alimentoService.listar(),
-    estabelecimentoService.listar(),
-  ])
-
-  const alimentoPorId = new Map(alimentos.map((a) => [a.idAlimento, a]))
-  const estabPorId = new Map(estabelecimentos.map((e) => [e.idEstabelecimento, e]))
-
-  return doacoes.map((d) => ({
-    ...d,
-    alimento: alimentoPorId.get(d.idAlimento),
-    estabelecimento: estabPorId.get(d.idEstabelecimento),
-  }))
+export function carregarCatalogo(): Promise<DoacaoView[]> {
+  return doacoesApi.disponiveis()
 }
 
+/** A API não tem "buscar doação por id": procuramos na lista das disponíveis. */
 export async function carregarDetalhe(id: number): Promise<DoacaoView> {
-  const doacao = await doacaoService.buscar(id)
-  const [alimento, estabelecimento] = await Promise.all([
-    alimentoService.buscar(doacao.idAlimento),
-    estabelecimentoService.buscar(doacao.idEstabelecimento),
-  ])
-  return { ...doacao, alimento, estabelecimento }
+  const doacoes = await doacoesApi.disponiveis()
+  const doacao = doacoes.find((d) => d.idDoacao === id)
+  if (!doacao) throw new ApiError(404, 'Doação não encontrada ou não está mais disponível.')
+  return doacao
 }
