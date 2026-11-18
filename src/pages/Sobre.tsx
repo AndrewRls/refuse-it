@@ -7,13 +7,13 @@ import PageHeader from '../components/PageHeader'
 const parceiros = [
   {
     icon: Store,
-    titulo: 'Estabelecimentos',
-    texto: 'Restaurantes, mercados, padarias e produtores publicam o que sobrou, em vez de descartar.',
+    titulo: 'Empresas e pessoas',
+    texto: 'Restaurantes, mercados, padarias, produtores e pessoas físicas publicam o que sobrou, em vez de descartar.',
   },
   {
     icon: HeartHandshake,
-    titulo: 'Instituições sociais',
-    texto: 'ONGs, abrigos e cozinhas comunitárias encontram alimentos perto de si e reservam o que precisam.',
+    titulo: 'ONGs',
+    texto: 'ONGs encontram os alimentos disponíveis e reservam o que precisam para distribuir a quem atendem.',
   },
   {
     icon: Landmark,
@@ -23,9 +23,9 @@ const parceiros = [
 ]
 
 const impacto = [
-  'Cada entrega concluída soma ao indicador de alimento reaproveitado.',
+  'Cada reserva soma ao indicador de alimento destinado a ONGs.',
   'O painel mostra o peso estimado, e itens contados por unidade aparecem à parte.',
-  'Estabelecimentos e instituições acompanham o próprio impacto em tempo real.',
+  'Doadores e ONGs acompanham o próprio impacto em tempo real.',
 ]
 
 const ods = [
@@ -60,7 +60,7 @@ export default function Sobre() {
             <div className="h-full rounded-3xl bg-linear-to-br from-brand-900 to-brand-700 p-8 text-white">
               <p className="text-xs font-bold tracking-widest text-brand-100 uppercase">A nossa resposta</p>
               <p className="mt-4 text-lg leading-relaxed text-white/90">
-                Conectamos estabelecimentos comerciais, produtores e instituições sociais para facilitar a redistribuição
+                Conectamos empresas, produtores, pessoas físicas e ONGs para facilitar a redistribuição
                 de alimentos que seriam descartados, mas ainda estão próprios para consumo.
               </p>
             </div>
@@ -132,7 +132,7 @@ export default function Sobre() {
             <SectionTitle
               eyebrow="Diferencial"
               title="Impacto que dá para medir"
-              subtitle="Além de reduzir o desperdício, a plataforma mensura o impacto social e ambiental pela quantidade de alimentos reaproveitados."
+              subtitle="Além de reduzir o desperdício, a plataforma mensura o impacto social e ambiental pela quantidade de alimentos destinados a quem precisa."
             />
           </Reveal>
           <Reveal delay={100}>
@@ -195,7 +195,7 @@ export default function Sobre() {
         <Reveal>
           <div className="rounded-3xl bg-linear-to-br from-brand-900 to-brand-700 px-6 py-12 text-center text-white">
             <h2 className="text-3xl text-white">Faça parte dessa rede</h2>
-            <p className="mx-auto mt-3 max-w-xl text-brand-100">Cadastre seu estabelecimento ou sua instituição e comece hoje.</p>
+            <p className="mx-auto mt-3 max-w-xl text-brand-100">Cadastre-se como empresa, pessoa física ou ONG e comece hoje.</p>
             <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
               <Button to="/cadastro" variant="secondary">Criar conta</Button>
               <Button to="/doacoes" variant="ghost" className="text-white hover:bg-white/10 hover:text-white">

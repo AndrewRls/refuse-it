@@ -20,7 +20,7 @@ export const integrantes: Integrante[] = [
     resumo: 'Responsável pelo front-end da plataforma: interface, rotas, formulários e integração com a API em Java.',
     responsabilidades: [
       'Interface responsiva com React, TypeScript e Tailwind CSS',
-      'Integração com a API (GET, POST, PUT e DELETE)',
+      'Integração com a API (GET, POST e PUT)',
       'Formulários com validação e feedback ao usuário',
       'Publicação do projeto na Vercel',
     ],
@@ -35,7 +35,7 @@ export const integrantes: Integrante[] = [
     funcao: 'Back-end (Java)',
     resumo: 'Responsável pela API em Java que sustenta a plataforma.',
     responsabilidades: [
-      'API para gerenciamento de doações, reservas, disponibilidade e entregas',
+      'API para gerenciamento de doações, reservas, disponibilidade, vendas e compras',
       'Regras de negócio e validações no servidor',
       'Publicação da API para uso pelo front-end',
     ],
@@ -62,7 +62,7 @@ export const integrantes: Integrante[] = [
     nomeCurto: 'Luis Henrique',
     turma: '1TDSPO',
     funcao: 'Chatbot e IA',
-    resumo: 'Responsável pelo chatbot que orienta doadores, instituições e cidadãos.',
+    resumo: 'Responsável pelo chatbot que orienta doadores, ONGs e cidadãos.',
     responsabilidades: [
       'Orientação sobre doações e segurança alimentar',
       'Classificação de alimentos e solicitações',
@@ -78,7 +78,7 @@ export const integrantes: Integrante[] = [
     funcao: 'Engenharia de software e negócio',
     resumo: 'Responsável pela engenharia de software e pelo modelo de negócio da plataforma.',
     responsabilidades: [
-      'Modelo de negócio baseado em parcerias com estabelecimentos, instituições e organizações públicas',
+      'Modelo de negócio baseado em parcerias com empresas, ONGs e organizações públicas',
       'Organização e documentação do projeto',
     ],
     github: 'https://github.com/dev-luisfernandes',

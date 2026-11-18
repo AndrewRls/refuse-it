@@ -32,15 +32,15 @@ const atalhos = [
 const etapas = [
   {
     titulo: 'Publicação',
-    texto: 'O estabelecimento escolhe o alimento e informa a quantidade, a validade, como armazenar e até quando dá para retirar.',
+    texto: 'Empresas e pessoas físicas escolhem o alimento e informam quantidade, validade, como armazenar e até quando dá para retirar.',
   },
   {
     titulo: 'Reserva',
-    texto: 'A instituição escolhe quanto precisa e faz o pedido. O doador analisa e aprova ou recusa.',
+    texto: 'A ONG escolhe quanto precisa e reserva. A quantidade disponível da doação se atualiza na hora.',
   },
   {
-    titulo: 'Entrega ou retirada',
-    texto: 'Com o pedido aprovado, o doador agenda dia e horário e define quem leva ou quem busca.',
+    titulo: 'Retirada',
+    texto: 'A ONG retira o alimento até o prazo limite informado na doação.',
   },
   {
     titulo: 'Acompanhamento',
@@ -50,14 +50,14 @@ const etapas = [
 
 const passos: Record<Perfil, { titulo: string; texto: string }[]> = {
   doador: [
-    { titulo: 'Cadastre o estabelecimento', texto: 'Restaurante, mercado, padaria ou produtor. O cadastro leva poucos minutos.' },
+    { titulo: 'Cadastre-se', texto: 'Empresa ou pessoa física. Basta o CNPJ ou o CPF, e o resto é preenchido sozinho.' },
     { titulo: 'Publique o que sobrou', texto: 'Informe quantidade, validade, armazenamento e prazo de retirada.' },
-    { titulo: 'Acompanhe a entrega', texto: 'Aprove os pedidos e acompanhe a retirada ou entrega até o fim.' },
+    { titulo: 'Acompanhe as reservas', texto: 'Veja quanto já foi reservado por ONGs e cancele a doação enquanto ninguém reservou.' },
   ],
   instituicao: [
-    { titulo: 'Cadastre a instituição', texto: 'ONGs, abrigos e cozinhas comunitárias podem participar.' },
-    { titulo: 'Escolha os alimentos', texto: 'Filtre por categoria, cidade e validade e veja o que atende sua comunidade.' },
-    { titulo: 'Reserve e combine a retirada', texto: 'Peça a quantidade que precisa e agende retirada ou entrega.' },
+    { titulo: 'Cadastre a ONG', texto: 'Informe o CNPJ. Os dados da organização são buscados automaticamente.' },
+    { titulo: 'Escolha os alimentos', texto: 'Filtre por categoria e validade e veja o que atende a sua comunidade.' },
+    { titulo: 'Reserve e retire', texto: 'Reserve a quantidade que precisa e retire até o prazo da doação.' },
   ],
 }
 
@@ -65,7 +65,7 @@ const cuidados = [
   'Apenas alimentos próprios para consumo, dentro da validade.',
   'Condição de armazenamento sempre informada ao publicar.',
   'Embalagens íntegras e alimentos higienizados.',
-  'Prazo de retirada realista, para a instituição buscar a tempo.',
+  'Prazo de retirada realista, para a ONG buscar a tempo.'
 ]
 
 const ods = [
@@ -143,7 +143,7 @@ export default function Home() {
                 <Leaf size={22} />
               </span>
               <p className="text-base leading-relaxed text-white/90">
-                O Refuse It conecta estabelecimentos, produtores e instituições sociais para que alimentos próprios para
+                O Refuse It conecta empresas, pessoas e ONGs para que alimentos próprios para
                 consumo cheguem à mesa, e não ao lixo.
               </p>
             </div>
@@ -315,7 +315,7 @@ export default function Home() {
                 perfil === p ? 'border-brand-700 text-brand-900' : 'border-transparent text-ink/50 hover:text-brand-700'
               }`}
             >
-              {p === 'doador' ? 'Sou doador' : 'Sou instituição'}
+              {p === 'doador' ? 'Sou doador' : 'Sou ONG'}
             </button>
           ))}
         </div>
