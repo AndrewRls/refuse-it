@@ -13,3 +13,8 @@ A plataforma também acompanha os resultados gerados, contabilizando a quantidad
 
 **ODS relacionados:** 2, 10, 11 e 12.
 
+## Funcionalidades
+
+- Listagem de alimentos disponíveis para doação, com pesquisa, filtros e opções de ordenação.
+- Cadastro e divulgação de doações com validação dos dados informados.
+- Solicitação e reserva de alimentos por instituições cadastradas.
