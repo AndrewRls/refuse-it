@@ -34,3 +34,17 @@ A plataforma também acompanha os resultados gerados, contabilizando a quantidad
 - Fetch API
 - ESLint
 
+## Estrutura
+
+```plaintext
+src/
+  assets/
+  components/
+  context/
+  data/
+  hooks/
+  pages/
+  services/
+  types/
+  utils/
+
