@@ -47,4 +47,14 @@ src/
   services/
   types/
   utils/
+```
 
+### Descrição dos diretórios
+ 
+| Diretório | Descrição |
+|---|---|
+| `assets/` | Armazena arquivos de imagem, fotos dos integrantes e logotipo. |
+| `components/` | Contém componentes reutilizáveis da interface. |
+| `context/` | Gerencia estados globais da aplicação, como a autenticação. |
+| `data/` | Armazena informações estáticas, como dados dos integrantes e FAQ. |
+| `hooks/` | Reúne hooks personalizados, como `useFetch` e `useAuth`. |
