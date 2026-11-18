@@ -77,9 +77,12 @@ Antes de iniciar, certifique-se de ter instalado:
 Clone o repositório e acesse a pasta do projeto:
  
 ```bash
-git clone URL_DO_REPOSITORIO
+git clone https://github.com/AndrewRls/refuse-it.git
 cd refuse-it
 npm install
 npm run dev
 ```
+Após iniciar o projeto, acesse http://localhost:5173 pelo navegador. Duplique o arquivo .env.example com o nome .env e configure VITE_API_URL com o endereço da API.
+
+
 
