@@ -1,13 +1,12 @@
 import { useState } from 'react'
-import type { FormEvent } from 'react'
+import type { FormEvent, ReactNode } from 'react'
 import { Link, useLocation } from 'react-router-dom'
-import { Ban, CircleCheck, HeartHandshake, Info, LoaderCircle, LogIn, Store } from 'lucide-react'
-import type { ReactNode } from 'react'
+import { Ban, CircleCheck, HeartHandshake, Info, LoaderCircle, LogIn } from 'lucide-react'
 import Button from './Button'
 import FormField from './FormField'
-import { useAuth } from '../hooks/useAuth'
-import { reservaService } from '../services/reservaService'
-import type { DoacaoView, Reserva } from '../types'
+import { useConta } from '../hooks/useConta'
+import { reservasApi } from '../services/reservasApi'
+import type { DoacaoView } from '../types'
 import { podeReservar } from '../utils/doacao'
 import { formatarQuantidade } from '../utils/format'
 import { inputClasses } from '../utils/styles'
@@ -45,16 +44,15 @@ function Aviso({ icon: Icon, titulo, texto, children }: {
 }
 
 export default function ReservaCard({ doacao, aoAtualizar }: ReservaCardProps) {
-  const { sessao } = useAuth()
+  const conta = useConta()
   const location = useLocation()
   const unidade = doacao.alimento?.unidadeMedida
 
   const [quantidade, setQuantidade] = useState('')
-  const [observacao, setObservacao] = useState('')
   const [tentou, setTentou] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [erroApi, setErroApi] = useState<string | null>(null)
-  const [reserva, setReserva] = useState<Reserva | null>(null)
+  const [reservada, setReservada] = useState<number | null>(null)
 
   function erroQuantidade(): string | undefined {
     if (!quantidade) return 'Informe a quantidade.'
@@ -69,19 +67,18 @@ export default function ReservaCard({ doacao, aoAtualizar }: ReservaCardProps) {
   }
 
   const erroQtd = erroQuantidade()
-  const erroObs = observacao.length > 500 ? 'Use no máximo 500 caracteres.' : undefined
   const mostrarErroQtd = tentou ? erroQtd : undefined
 
   /* ---------- Reserva feita ---------- */
-  if (reserva) {
+  if (reservada !== null) {
     return (
       <Caixa>
         <div role="status" className="text-center">
           <CircleCheck className="mx-auto text-brand-700" size={44} />
-          <h2 className="mt-3 text-lg">Reserva solicitada!</h2>
+          <h2 className="mt-3 text-lg">Reserva realizada!</h2>
           <p className="mt-2 text-sm leading-relaxed text-ink/70">
-            Você pediu {formatarQuantidade(reserva.quantidadeSolicitada, unidade)}. O estabelecimento vai
-            analisar o pedido, e você acompanha o andamento no seu painel.
+            Você reservou {formatarQuantidade(reservada, unidade)}. Acompanhe a reserva no seu painel e combine a
+            retirada até {new Date(`${doacao.dataLimiteRetirada}T00:00:00`).toLocaleDateString('pt-BR')}.
           </p>
           <div className="mt-5 flex flex-col gap-3">
             <Button to="/painel">Ir para o painel</Button>
@@ -105,12 +102,12 @@ export default function ReservaCard({ doacao, aoAtualizar }: ReservaCardProps) {
     )
   }
 
-  if (!sessao) {
+  if (!conta) {
     return (
       <Aviso
         icon={LogIn}
         titulo="Entre para reservar"
-        texto="Instituições cadastradas podem reservar alimentos. Entre ou crie a conta da sua instituição."
+        texto="ONGs cadastradas podem reservar alimentos. Entre ou crie a conta da sua ONG."
       >
         <Link
           to="/login"
@@ -124,31 +121,15 @@ export default function ReservaCard({ doacao, aoAtualizar }: ReservaCardProps) {
     )
   }
 
-  if (sessao.usuario.tipoUsuario !== 'INSTITUICAO') {
-    const dona = sessao.estabelecimento?.idEstabelecimento === doacao.idEstabelecimento
+  if (conta.tipo !== 'ONG') {
     return (
       <Aviso
-        icon={dona ? Store : Info}
-        titulo={dona ? 'Esta doação é sua' : 'Reservas são para instituições'}
-        texto={
-          dona
-            ? 'Acompanhe e gerencie as reservas recebidas no seu painel.'
-            : 'Apenas contas de instituições sociais podem reservar alimentos.'
-        }
+        icon={Info}
+        titulo="Reservas são para ONGs"
+        texto="Apenas contas de ONG podem reservar alimentos. Você pode publicar suas próprias doações."
       >
-        {dona && <Button to="/painel">Abrir painel</Button>}
+        <Button to="/painel" variant="secondary">Abrir painel</Button>
       </Aviso>
-    )
-  }
-
-  const instituicao = sessao.instituicao
-  if (!instituicao) {
-    return (
-      <Aviso
-        icon={HeartHandshake}
-        titulo="Complete o cadastro"
-        texto="Sua conta ainda não está vinculada a uma instituição, então não é possível reservar."
-      />
     )
   }
 
@@ -158,20 +139,18 @@ export default function ReservaCard({ doacao, aoAtualizar }: ReservaCardProps) {
     setTentou(true)
     setErroApi(null)
 
-    if (erroQtd || erroObs) {
-      document.getElementById(erroQtd ? 'quantidade' : 'observacao')?.focus()
+    if (erroQtd || !conta) {
+      document.getElementById('quantidade')?.focus()
       return
     }
 
     setEnviando(true)
     try {
-      const nova = await reservaService.criar({
+      await reservasApi.criar(conta.idUsuario, {
         idDoacao: doacao.idDoacao,
-        idInstituicao: instituicao!.idInstituicao,
         quantidadeSolicitada: Number(quantidade),
-        observacao: observacao.trim() || undefined,
       })
-      setReserva(nova)
+      setReservada(Number(quantidade))
     } catch (err) {
       setErroApi(err instanceof Error ? err.message : 'Não foi possível reservar.')
     } finally {
@@ -182,12 +161,14 @@ export default function ReservaCard({ doacao, aoAtualizar }: ReservaCardProps) {
 
   return (
     <Caixa>
-      <h2 className="text-xl">Reservar esta doação</h2>
+      <h2 className="flex items-center gap-2 text-xl">
+        <HeartHandshake size={22} className="text-brand-700" /> Reservar esta doação
+      </h2>
       <p className="mt-1 text-sm text-ink/70">
-        Reservando como <strong className="text-brand-900">{instituicao.nome}</strong>
+        Reservando como <strong className="text-brand-900">{conta.nome}</strong>
       </p>
 
-      <form onSubmit={enviar} noValidate className="mt-6 space-y-5">
+      <form onSubmit={(ev) => void enviar(ev)} noValidate className="mt-6 space-y-5">
         <FormField
           id="quantidade"
           label="Quantidade desejada"
@@ -218,24 +199,6 @@ export default function ReservaCard({ doacao, aoAtualizar }: ReservaCardProps) {
           Reservar tudo que está disponível
         </button>
 
-        <FormField
-          id="observacao"
-          label="Observação"
-          error={tentou ? erroObs : undefined}
-          hint={`Opcional. ${observacao.length}/500 caracteres`}
-        >
-          <textarea
-            id="observacao"
-            rows={3}
-            value={observacao}
-            onChange={(e) => setObservacao(e.target.value)}
-            aria-invalid={Boolean(tentou && erroObs)}
-            aria-describedby={tentou && erroObs ? 'observacao-erro' : undefined}
-            className={inputClasses(Boolean(tentou && erroObs))}
-            placeholder="Ex.: Retiramos às 16h com veículo próprio."
-          />
-        </FormField>
-
         {erroApi && (
           <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
             {erroApi}
@@ -248,7 +211,7 @@ export default function ReservaCard({ doacao, aoAtualizar }: ReservaCardProps) {
               <LoaderCircle size={18} className="animate-spin" /> Enviando...
             </>
           ) : (
-            'Solicitar reserva'
+            'Reservar'
           )}
         </Button>
       </form>
