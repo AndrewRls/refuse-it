@@ -1,525 +1,395 @@
-import { useMemo, useState } from 'react'
-import { CircleCheck, Clock, Inbox, Leaf, PackageCheck, PackageOpen, Plus, Truck, X } from 'lucide-react'
-import type { LucideIcon } from 'lucide-react'
-import AgendarEntregaDialog from '../components/AgendarEntregaDialog'
+import { useCallback, useMemo, useState } from 'react'
+import { CircleCheck, Clock, Inbox, Leaf, PackageCheck, PackageOpen, Plus, X } from 'lucide-react'
 import Button from '../components/Button'
 import ConfirmDialog from '../components/ConfirmDialog'
-import CountUp from '../components/CountUp'
-import DoacaoLinha from '../components/DoacaoLinha'
 import EmptyState from '../components/EmptyState'
 import ErrorMessage from '../components/ErrorMessage'
+import Indicadores from '../components/Indicadores'
+import type { Kpi } from '../components/Indicadores'
+import MinhaDoacaoCard from '../components/MinhaDoacaoCard'
+import MinhaReservaCard from '../components/MinhaReservaCard'
+import type { ReservaExibida } from '../components/MinhaReservaCard'
 import PageHeader from '../components/PageHeader'
-import ReservaItem from '../components/ReservaItem'
 import Spinner from '../components/Spinner'
-import { useAuth } from '../hooks/useAuth'
+import { useConta } from '../hooks/useConta'
 import { useFetch } from '../hooks/useFetch'
-import { doacaoService } from '../services/doacaoService'
-import { entregaService } from '../services/entregaService'
-import { carregarPainel } from '../services/painelService'
-import { reservaService } from '../services/reservaService'
-import type { DoacaoView, Indicadores, ReservaView, Sessao, StatusReserva, TipoUsuario } from '../types'
-import { agoraISO } from '../utils/format'
-import { calcularIndicadores, montarDoacoes, montarReservas, paraDoacao, paraReserva } from '../utils/painel'
-
-type Aba = 'reservas' | 'doacoes'
-type Filtro = 'TODAS' | 'PENDENTE' | 'APROVADA' | 'CONCLUIDA' | 'ENCERRADAS'
-
-interface Confirmacao {
-  titulo: string
-  texto: string
-  rotulo: string
-  perigo: boolean
-  acao: () => Promise<void>
-  sucesso: string
-}
+import { doacoesApi } from '../services/doacoesApi'
+import { reservasApi } from '../services/reservasApi'
+import type { Conta, DoacaoView, UnidadeMedida } from '../types'
+import { diasParaVencer, pesoEmKg } from '../utils/format'
+import { reservaEncerrada } from '../utils/reserva'
 
 interface Aviso {
   tipo: 'sucesso' | 'erro'
   texto: string
 }
 
-interface Kpi {
-  rotulo: string
-  valor: number
-  casas: number
-  sufixo?: string
-  icon: LucideIcon
+/** Soma pesos (kg) e itens por unidade, para o indicador de alimento reservado. */
+function somar(itens: { quantidade: number; unidade?: UnidadeMedida }[]) {
+  let kg = 0
+  let unidades = 0
+  for (const { quantidade, unidade } of itens) {
+    if (!unidade) continue
+    const peso = pesoEmKg(quantidade, unidade)
+    if (peso === null) unidades += quantidade
+    else kg += peso
+  }
+  return { kg, unidades }
 }
 
-const filtros: { valor: Filtro; rotulo: string }[] = [
-  { valor: 'TODAS', rotulo: 'Todas' },
-  { valor: 'PENDENTE', rotulo: 'Pendentes' },
-  { valor: 'APROVADA', rotulo: 'Aprovadas' },
-  { valor: 'CONCLUIDA', rotulo: 'Concluídas' },
-  { valor: 'ENCERRADAS', rotulo: 'Encerradas' },
-]
-
-const statusReserva: Record<StatusReserva, { rotulo: string; barra: string }> = {
-  PENDENTE: { rotulo: 'Pendentes', barra: 'bg-amber-400' },
-  APROVADA: { rotulo: 'Aprovadas', barra: 'bg-brand-500' },
-  CONCLUIDA: { rotulo: 'Concluídas', barra: 'bg-brand-900' },
-  RECUSADA: { rotulo: 'Recusadas', barra: 'bg-red-400' },
-  CANCELADA: { rotulo: 'Canceladas', barra: 'bg-slate-400' },
+function AvisoTela({ aviso, onFechar }: { aviso: Aviso | null; onFechar: () => void }) {
+  if (!aviso) return null
+  return (
+    <div
+      role={aviso.tipo === 'erro' ? 'alert' : 'status'}
+      className={`mb-6 flex items-start justify-between gap-4 rounded-2xl px-4 py-3 text-sm font-semibold ${
+        aviso.tipo === 'erro' ? 'bg-red-50 text-red-700' : 'bg-brand-50 text-brand-900 ring-1 ring-brand-100'
+      }`}
+    >
+      <span>{aviso.texto}</span>
+      <button type="button" onClick={onFechar} aria-label="Dispensar aviso" className="shrink-0">
+        <X size={16} />
+      </button>
+    </div>
+  )
 }
 
-function passaNoFiltro(filtro: Filtro, r: ReservaView): boolean {
+function Filtros<T extends string>({ opcoes, valor, onChange }: {
+  opcoes: { valor: T; rotulo: string; qtd: number }[]
+  valor: T
+  onChange: (v: T) => void
+}) {
+  return (
+    <div className="mb-6 flex flex-wrap gap-2">
+      {opcoes.map((f) => (
+        <button
+          key={f.valor}
+          type="button"
+          aria-pressed={valor === f.valor}
+          onClick={() => onChange(f.valor)}
+          className={`rounded-full px-4 py-2 text-sm font-bold transition ${
+            valor === f.valor ? 'bg-brand-700 text-white' : 'bg-white text-brand-700 ring-1 ring-brand-100 hover:bg-brand-50'
+          }`}
+        >
+          {f.rotulo} ({f.qtd})
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/* ====================== DOADOR (pessoa física ou empresa) ====================== */
+
+type FiltroDoacao = 'TODAS' | 'ATIVAS' | 'ESGOTADAS' | 'ENCERRADAS'
+
+const emAberto = (d: DoacaoView) =>
+  (d.status === 'DISPONIVEL' || d.status === 'PARCIALMENTE_RESERVADA') && diasParaVencer(d.dataValidade) >= 0
+
+function passaDoacao(filtro: FiltroDoacao, d: DoacaoView): boolean {
   if (filtro === 'TODAS') return true
-  if (filtro === 'ENCERRADAS') return r.status === 'RECUSADA' || r.status === 'CANCELADA'
-  return r.status === filtro
+  if (filtro === 'ATIVAS') return emAberto(d)
+  if (filtro === 'ESGOTADAS') return d.status === 'ESGOTADA'
+  return !emAberto(d) && d.status !== 'ESGOTADA'
 }
 
-function montarKpis(perfil: TipoUsuario, ind: Indicadores, totalReservas: number): Kpi[] {
-  if (perfil === 'DOADOR') {
-    return [
-      { rotulo: 'Alimento reaproveitado', valor: ind.kgReaproveitados, casas: 1, sufixo: ' kg', icon: Leaf },
-      { rotulo: 'Doações ativas', valor: ind.doacoesAtivas, casas: 0, icon: PackageCheck },
-      { rotulo: 'Reservas pendentes', valor: ind.reservasPendentes, casas: 0, icon: Clock },
-      { rotulo: 'Entregas concluídas', valor: ind.reservasConcluidas, casas: 0, icon: CircleCheck },
-    ]
-  }
+function PainelDoador({ conta }: { conta: Conta }) {
+  const buscar = useCallback(() => doacoesApi.doUsuario(conta.idUsuario), [conta.idUsuario])
+  const { data, loading, error, reload, refresh } = useFetch(buscar)
 
-  if (perfil === 'INSTITUICAO') {
-    return [
-      { rotulo: 'Alimento recebido', valor: ind.kgReaproveitados, casas: 1, sufixo: ' kg', icon: Leaf },
-      { rotulo: 'Reservas pendentes', valor: ind.reservasPendentes, casas: 0, icon: Clock },
-      { rotulo: 'Reservas aprovadas', valor: ind.reservasAprovadas, casas: 0, icon: Truck },
-      { rotulo: 'Recebimentos concluídos', valor: ind.reservasConcluidas, casas: 0, icon: CircleCheck },
-    ]
-  }
-
-  return [
-    { rotulo: 'Alimento reaproveitado', valor: ind.kgReaproveitados, casas: 1, sufixo: ' kg', icon: Leaf },
-    { rotulo: 'Doações ativas', valor: ind.doacoesAtivas, casas: 0, icon: PackageCheck },
-    { rotulo: 'Reservas na plataforma', valor: totalReservas, casas: 0, icon: Inbox },
-    { rotulo: 'Entregas concluídas', valor: ind.reservasConcluidas, casas: 0, icon: CircleCheck },
-  ]
-}
-
-function PainelConteudo({ sessao }: { sessao: Sessao }) {
-  const perfil = sessao.usuario.tipoUsuario
-  const estabelecimento = sessao.estabelecimento
-  const instituicao = sessao.instituicao
-  const semPerfil = (perfil === 'DOADOR' && !estabelecimento) || (perfil === 'INSTITUICAO' && !instituicao)
-  const podeGerir = perfil === 'DOADOR'
-
-  const { data, loading, error, reload, refresh } = useFetch(carregarPainel)
-
-  const [aba, setAba] = useState<Aba>('reservas')
-  const [filtro, setFiltro] = useState<Filtro>('TODAS')
+  const [filtro, setFiltro] = useState<FiltroDoacao>('TODAS')
   const [aviso, setAviso] = useState<Aviso | null>(null)
   const [ocupado, setOcupado] = useState(false)
-  const [confirmacao, setConfirmacao] = useState<Confirmacao | null>(null)
-  const [paraAgendar, setParaAgendar] = useState<ReservaView | null>(null)
+  const [paraCancelar, setParaCancelar] = useState<DoacaoView | null>(null)
 
-  /* ---------- Dados do perfil logado ---------- */
-  const { doacoes, reservas } = useMemo(() => {
-    if (!data) return { doacoes: [] as DoacaoView[], reservas: [] as ReservaView[] }
-
-    const todas = montarDoacoes(data)
-    const todasReservas = montarReservas(data, todas)
-
-    if (perfil === 'DOADOR' && estabelecimento) {
-      const proprias = todas.filter((d) => d.idEstabelecimento === estabelecimento.idEstabelecimento)
-      const ids = new Set(proprias.map((d) => d.idDoacao))
-      return { doacoes: proprias, reservas: todasReservas.filter((r) => ids.has(r.idDoacao)) }
-    }
-
-    if (perfil === 'INSTITUICAO' && instituicao) {
-      return { doacoes: [] as DoacaoView[], reservas: todasReservas.filter((r) => r.idInstituicao === instituicao.idInstituicao) }
-    }
-
-    if (perfil === 'ADMIN') return { doacoes: todas, reservas: todasReservas }
-
-    return { doacoes: [] as DoacaoView[], reservas: [] as ReservaView[] }
-  }, [data, perfil, estabelecimento, instituicao])
-
-  const indicadores = useMemo(() => calcularIndicadores(doacoes, reservas), [doacoes, reservas])
-  const kpis = montarKpis(perfil, indicadores, reservas.length)
-
-  const reservasPorDoacao = useMemo(() => {
-    const mapa = new Map<number, { ativas: number; total: number }>()
-    for (const r of reservas) {
-      const atual = mapa.get(r.idDoacao) ?? { ativas: 0, total: 0 }
-      atual.total += 1
-      if (r.status === 'PENDENTE' || r.status === 'APROVADA') atual.ativas += 1
-      mapa.set(r.idDoacao, atual)
-    }
-    return mapa
-  }, [reservas])
-
-  const reservasVisiveis = useMemo(
-    () =>
-      reservas
-        .filter((r) => passaNoFiltro(filtro, r))
-        .sort(
-          (a, b) =>
-            (a.status === 'PENDENTE' ? 0 : 1) - (b.status === 'PENDENTE' ? 0 : 1) ||
-            Date.parse(b.dataReserva) - Date.parse(a.dataReserva),
-        ),
-    [reservas, filtro],
+  const doacoes = useMemo(
+    () => [...(data ?? [])].sort((a, b) => Date.parse(b.dataPublicacao) - Date.parse(a.dataPublicacao)),
+    [data],
   )
 
-  const doacoesOrdenadas = useMemo(
-    () => [...doacoes].sort((a, b) => Date.parse(b.dataPublicacao) - Date.parse(a.dataPublicacao)),
-    [doacoes],
-  )
+  const kpis: Kpi[] = useMemo(() => {
+    const reservado = somar(
+      doacoes
+        .filter((d) => d.status !== 'CANCELADA')
+        .map((d) => ({ quantidade: d.quantidadeTotal - d.quantidadeDisponivel, unidade: d.alimento?.unidadeMedida })),
+    )
+    return [
+      {
+        rotulo: 'Alimento reservado por ONGs',
+        valor: reservado.kg,
+        casas: 1,
+        sufixo: ' kg',
+        icon: Leaf,
+        nota: reservado.unidades > 0 ? `+ ${reservado.unidades.toLocaleString('pt-BR')} itens por unidade` : undefined,
+      },
+      { rotulo: 'Doações em aberto', valor: doacoes.filter(emAberto).length, casas: 0, icon: PackageCheck },
+      { rotulo: 'Totalmente reservadas', valor: doacoes.filter((d) => d.status === 'ESGOTADA').length, casas: 0, icon: CircleCheck },
+      { rotulo: 'Publicadas no total', valor: doacoes.length, casas: 0, icon: Inbox },
+    ]
+  }, [doacoes])
 
-  /* ---------- Ações ---------- */
-  async function executar(acao: () => Promise<void>, sucesso: string) {
+  const visiveis = doacoes.filter((d) => passaDoacao(filtro, d))
+
+  async function cancelar() {
+    if (!paraCancelar) return
     setOcupado(true)
     setAviso(null)
     try {
-      await acao()
-      setAviso({ tipo: 'sucesso', texto: sucesso })
+      await doacoesApi.cancelar(conta.idUsuario, paraCancelar.idDoacao)
+      setAviso({ tipo: 'sucesso', texto: 'Doação cancelada.' })
     } catch (e) {
-      setAviso({ tipo: 'erro', texto: e instanceof Error ? e.message : 'Não foi possível concluir a ação.' })
+      setAviso({ tipo: 'erro', texto: e instanceof Error ? e.message : 'Não foi possível cancelar a doação.' })
     } finally {
       setOcupado(false)
-      refresh() // sempre mostra o estado real depois da tentativa
+      setParaCancelar(null)
+      refresh()
     }
   }
 
-  async function confirmar() {
-    if (!confirmacao) return
-    const atual = confirmacao
-    await executar(atual.acao, atual.sucesso)
-    setConfirmacao(null)
-  }
-
-  const mudarReserva = async (r: ReservaView, status: StatusReserva) => {
-    await reservaService.atualizar(r.idReserva, { ...paraReserva(r), status })
-  }
-
-  const aprovar = (r: ReservaView) =>
-    executar(() => mudarReserva(r, 'APROVADA'), 'Reserva aprovada. Agora é só agendar a entrega.')
-
-  const recusar = (r: ReservaView) =>
-    setConfirmacao({
-      titulo: 'Recusar reserva?',
-      texto: 'A quantidade volta a ficar disponível para outras instituições.',
-      rotulo: 'Recusar',
-      perigo: true,
-      acao: () => mudarReserva(r, 'RECUSADA'),
-      sucesso: 'Reserva recusada.',
-    })
-
-  const cancelarReserva = (r: ReservaView) =>
-    setConfirmacao({
-      titulo: 'Cancelar reserva?',
-      texto: 'A quantidade volta a ficar disponível para outras instituições.',
-      rotulo: 'Cancelar reserva',
-      perigo: true,
-      acao: () => mudarReserva(r, 'CANCELADA'),
-      sucesso: 'Reserva cancelada.',
-    })
-
-  const iniciarEntrega = (r: ReservaView) => {
-    const e = r.entrega
-    if (!e) return Promise.resolve()
-    return executar(async () => {
-      await entregaService.atualizar(e.idEntrega, { ...e, status: 'EM_ANDAMENTO' })
-    }, 'Entrega em andamento.')
-  }
-
-  const concluirEntrega = (r: ReservaView) => {
-    const e = r.entrega
-    if (!e) return Promise.resolve()
-    return executar(async () => {
-      const agora = agoraISO()
-      // Se a retirada aconteceu antes do horário combinado, o agendamento é ajustado
-      // para respeitar a regra "conclusão >= agendamento" do banco.
-      const dataAgendada = e.dataAgendada > agora ? agora : e.dataAgendada
-      await entregaService.atualizar(e.idEntrega, { ...e, dataAgendada, dataConclusao: agora, status: 'CONCLUIDA' })
-      await mudarReserva(r, 'CONCLUIDA')
-    }, 'Entrega concluída. Esse alimento foi reaproveitado!')
-  }
-
-  const entregaFalhou = (r: ReservaView) => {
-    const e = r.entrega
-    if (!e) return
-    setConfirmacao({
-      titulo: 'Marcar como não realizada?',
-      texto: 'A reserva será cancelada e a quantidade volta a ficar disponível.',
-      rotulo: 'Confirmar',
-      perigo: true,
-      acao: async () => {
-        await entregaService.atualizar(e.idEntrega, { ...e, status: 'NAO_REALIZADA' })
-        await mudarReserva(r, 'CANCELADA')
-      },
-      sucesso: 'Entrega marcada como não realizada.',
-    })
-  }
-
-  const cancelarDoacao = (d: DoacaoView) =>
-    setConfirmacao({
-      titulo: 'Cancelar doação?',
-      texto: 'Ela deixa de aparecer no catálogo e não poderá mais ser reservada.',
-      rotulo: 'Cancelar doação',
-      perigo: true,
-      acao: async () => {
-        await doacaoService.atualizar(d.idDoacao, { ...paraDoacao(d), status: 'CANCELADA' })
-      },
-      sucesso: 'Doação cancelada.',
-    })
-
-  const excluirDoacao = (d: DoacaoView) =>
-    setConfirmacao({
-      titulo: 'Excluir doação?',
-      texto: 'Esta ação não pode ser desfeita.',
-      rotulo: 'Excluir',
-      perigo: true,
-      acao: () => doacaoService.remover(d.idDoacao),
-      sucesso: 'Doação excluída.',
-    })
-
-  /* ---------- Tela ---------- */
-  const primeiroNome = sessao.usuario.nome.split(' ')[0]
-  const subtitulo =
-    perfil === 'DOADOR' ? estabelecimento?.nomeFantasia : perfil === 'INSTITUICAO' ? instituicao?.nome : 'Visão geral da plataforma'
-  const pendentes = reservas.filter((r) => r.status === 'PENDENTE').length
-
   return (
     <>
-            <PageHeader
-        titulo={`Olá, ${primeiroNome}`}
+      <PageHeader
+        titulo={`Olá, ${conta.nome.split(' ')[0]}`}
         rotulo="Painel"
-        descricao={subtitulo}
+        descricao="Acompanhe as doações que você publicou e quanto já foi reservado."
         acao={
-          perfil === 'DOADOR' ? (
-            <Button to="/doacoes/nova" variant="accent">
-              <Plus size={18} /> Publicar doação
-            </Button>
-          ) : perfil === 'INSTITUICAO' ? (
-            <Button to="/doacoes" variant="accent">
-              Explorar alimentos
-            </Button>
-          ) : undefined
+          <Button to="/doacoes/nova" variant="accent">
+            <Plus size={18} /> Publicar doação
+          </Button>
         }
       />
 
       <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
-        {aviso && (
-          <div
-            role={aviso.tipo === 'erro' ? 'alert' : 'status'}
-            className={`mb-6 flex items-start justify-between gap-4 rounded-2xl px-4 py-3 text-sm font-semibold ${
-              aviso.tipo === 'erro' ? 'bg-red-50 text-red-700' : 'bg-brand-50 text-brand-900 ring-1 ring-brand-100'
-            }`}
-          >
-            <span>{aviso.texto}</span>
-            <button type="button" onClick={() => setAviso(null)} aria-label="Dispensar aviso" className="shrink-0">
-              <X size={16} />
-            </button>
-          </div>
-        )}
+        <AvisoTela aviso={aviso} onFechar={() => setAviso(null)} />
 
-        {semPerfil ? (
-          <EmptyState
-            icon={perfil === 'DOADOR' ? PackageOpen : Inbox}
-            titulo="Complete o seu cadastro"
-            texto="Sua conta ainda não está vinculada a um estabelecimento ou instituição, então não há dados para mostrar."
-          />
-        ) : loading ? (
-          <Spinner texto="Carregando painel..." />
-        ) : error || !data ? (
-          <ErrorMessage mensagem={error ?? 'Erro inesperado.'} onRetry={reload} />
+        {loading ? (
+          <Spinner texto="Carregando suas doações..." />
+        ) : error ? (
+          <ErrorMessage mensagem={error} onRetry={reload} />
         ) : (
           <>
-            {/* Indicadores */}
-            <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-              {kpis.map((k) => (
-                <div key={k.rotulo} className="rounded-3xl bg-white p-5 ring-1 ring-brand-100">
-                  <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-100 text-brand-700">
-                    <k.icon size={22} />
-                  </span>
-                  <p className="mt-4 text-3xl font-extrabold text-brand-900">
-                    <CountUp valor={k.valor} casas={k.casas} />
-                    {k.sufixo}
-                  </p>
-                  <p className="mt-1 text-sm font-semibold text-ink/60">{k.rotulo}</p>
-                  {k.sufixo === ' kg' && indicadores.unidadesReaproveitadas > 0 && (
-                    <p className="mt-1 text-xs text-ink/50">
-                      + {indicadores.unidadesReaproveitadas.toLocaleString('pt-BR')} itens por unidade
-                    </p>
-                  )}
-                </div>
-              ))}
-            </div>
+            <Indicadores kpis={kpis} />
             <p className="mt-3 text-xs text-ink/50">
-              Peso estimado: litros e mililitros são convertidos considerando 1 L ≈ 1 kg. Só entregas concluídas contam
-              como alimento reaproveitado.
+              Peso estimado: litros e mililitros são convertidos considerando 1 L ≈ 1 kg. O indicador soma o que ONGs já
+              reservaram das suas doações.
             </p>
 
-            {/* Distribuição das reservas */}
-            {reservas.length > 0 && (
-              <div className="mt-8 rounded-3xl bg-brand-50 p-5 ring-1 ring-brand-100 sm:p-6">
-                <p className="text-sm font-bold text-brand-900">Reservas por situação</p>
-                <div className="mt-4 flex h-3 overflow-hidden rounded-full bg-white" role="img" aria-label="Distribuição das reservas por situação">
-                  {(Object.keys(statusReserva) as StatusReserva[]).map((s) => {
-                    const qtd = reservas.filter((r) => r.status === s).length
-                    return qtd === 0 ? null : (
-                      <div key={s} className={`${statusReserva[s].barra} transition-all duration-700`} style={{ width: `${(qtd / reservas.length) * 100}%` }} />
-                    )
-                  })}
-                </div>
-                <ul className="mt-4 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold text-ink/70">
-                  {(Object.keys(statusReserva) as StatusReserva[]).map((s) => (
-                    <li key={s} className="flex items-center gap-2">
-                      <span className={`h-2.5 w-2.5 rounded-full ${statusReserva[s].barra}`} />
-                      {statusReserva[s].rotulo}: {reservas.filter((r) => r.status === s).length}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {/* Abas */}
-            {perfil !== 'INSTITUICAO' && (
-              <div className="mt-10 flex">
-                <div role="tablist" aria-label="Seções do painel" className="inline-flex rounded-full bg-brand-50 p-1.5 ring-1 ring-brand-100">
-                  {(['reservas', 'doacoes'] as Aba[]).map((a) => (
-                    <button
-                      key={a}
-                      role="tab"
-                      type="button"
-                      aria-selected={aba === a}
-                      onClick={() => setAba(a)}
-                      className={`flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-bold transition ${
-                        aba === a ? 'bg-brand-700 text-white shadow-md' : 'text-brand-700 hover:text-brand-900'
-                      }`}
-                    >
-                      {a === 'reservas' ? 'Reservas' : 'Doações'}
-                      {a === 'reservas' && pendentes > 0 && (
-                        <span className="rounded-full bg-amber-400 px-2 py-0.5 text-xs text-amber-950">{pendentes}</span>
-                      )}
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="mt-8" role="tabpanel">
-              {(perfil === 'INSTITUICAO' || aba === 'reservas') && (
+            <div className="mt-10">
+              {doacoes.length === 0 ? (
+                <EmptyState
+                  icon={PackageOpen}
+                  titulo="Você ainda não publicou doações"
+                  texto="Publique um alimento que sobrou e ajude a reduzir o desperdício."
+                  action={
+                    <Button to="/doacoes/nova">
+                      <Plus size={18} /> Publicar doação
+                    </Button>
+                  }
+                />
+              ) : (
                 <>
-                  <div className="mb-6 flex flex-wrap gap-2">
-                    {filtros.map((f) => {
-                      const qtd = reservas.filter((r) => passaNoFiltro(f.valor, r)).length
-                      return (
-                        <button
-                          key={f.valor}
-                          type="button"
-                          aria-pressed={filtro === f.valor}
-                          onClick={() => setFiltro(f.valor)}
-                          className={`rounded-full px-4 py-2 text-sm font-bold transition ${
-                            filtro === f.valor ? 'bg-brand-700 text-white' : 'bg-white text-brand-700 ring-1 ring-brand-100 hover:bg-brand-50'
-                          }`}
-                        >
-                          {f.rotulo} ({qtd})
-                        </button>
-                      )
-                    })}
-                  </div>
-
-                  {reservasVisiveis.length === 0 ? (
-                    <EmptyState
-                      icon={Inbox}
-                      titulo={reservas.length === 0 ? 'Nenhuma reserva ainda' : 'Nenhuma reserva nesta categoria'}
-                      texto={
-                        perfil === 'INSTITUICAO'
-                          ? 'Encontre alimentos no catálogo e faça sua primeira reserva.'
-                          : 'Quando uma instituição reservar um alimento seu, ela aparece aqui.'
-                      }
-                      action={perfil === 'INSTITUICAO' ? <Button to="/doacoes">Explorar alimentos</Button> : undefined}
-                    />
+                  <Filtros
+                    valor={filtro}
+                    onChange={setFiltro}
+                    opcoes={[
+                      { valor: 'TODAS', rotulo: 'Todas', qtd: doacoes.length },
+                      { valor: 'ATIVAS', rotulo: 'Em aberto', qtd: doacoes.filter((d) => passaDoacao('ATIVAS', d)).length },
+                      { valor: 'ESGOTADAS', rotulo: 'Esgotadas', qtd: doacoes.filter((d) => passaDoacao('ESGOTADAS', d)).length },
+                      { valor: 'ENCERRADAS', rotulo: 'Encerradas', qtd: doacoes.filter((d) => passaDoacao('ENCERRADAS', d)).length },
+                    ]}
+                  />
+                  {visiveis.length === 0 ? (
+                    <EmptyState icon={Inbox} titulo="Nenhuma doação nesta categoria" texto="Troque o filtro para ver as outras." />
                   ) : (
                     <div className="grid gap-5 lg:grid-cols-2">
-                      {reservasVisiveis.map((r) => (
-                        <ReservaItem
-                          key={r.idReserva}
-                          reserva={r}
-                          perfil={perfil}
-                          ocupado={ocupado}
-                          acoes={{
-                            aprovar: () => void aprovar(r),
-                            recusar: () => recusar(r),
-                            cancelar: () => cancelarReserva(r),
-                            agendar: () => setParaAgendar(r),
-                            iniciarEntrega: () => void iniciarEntrega(r),
-                            concluirEntrega: () => void concluirEntrega(r),
-                            entregaFalhou: () => entregaFalhou(r),
-                          }}
-                        />
+                      {visiveis.map((d) => (
+                        <MinhaDoacaoCard key={d.idDoacao} doacao={d} ocupado={ocupado} onCancelar={() => setParaCancelar(d)} />
                       ))}
                     </div>
                   )}
                 </>
               )}
-
-              {perfil !== 'INSTITUICAO' && aba === 'doacoes' &&
-                (doacoesOrdenadas.length === 0 ? (
-                  <EmptyState
-                    icon={PackageOpen}
-                    titulo="Nenhuma doação publicada"
-                    texto="Publique um alimento que sobrou e ajude a reduzir o desperdício."
-                    action={
-                      perfil === 'DOADOR' ? (
-                        <Button to="/doacoes/nova">
-                          <Plus size={18} /> Publicar doação
-                        </Button>
-                      ) : undefined
-                    }
-                  />
-                ) : (
-                  <div className="grid gap-5 lg:grid-cols-2">
-                    {doacoesOrdenadas.map((d) => {
-                      const contagem = reservasPorDoacao.get(d.idDoacao) ?? { ativas: 0, total: 0 }
-                      return (
-                        <DoacaoLinha
-                          key={d.idDoacao}
-                          doacao={d}
-                          reservasAtivas={contagem.ativas}
-                          totalReservas={contagem.total}
-                          podeGerir={podeGerir}
-                          ocupado={ocupado}
-                          mostrarEstabelecimento={perfil === 'ADMIN'}
-                          onCancelar={() => cancelarDoacao(d)}
-                          onExcluir={() => excluirDoacao(d)}
-                        />
-                      )
-                    })}
-                  </div>
-                ))}
             </div>
           </>
         )}
       </section>
 
       <ConfirmDialog
-        aberto={confirmacao !== null}
-        titulo={confirmacao?.titulo ?? ''}
-        rotuloConfirmar={confirmacao?.rotulo ?? ''}
-        perigo={confirmacao?.perigo}
+        aberto={paraCancelar !== null}
+        titulo="Cancelar doação?"
+        rotuloConfirmar="Cancelar doação"
+        perigo
         carregando={ocupado}
-        onConfirmar={() => void confirmar()}
-        onCancelar={() => setConfirmacao(null)}
+        onConfirmar={() => void cancelar()}
+        onCancelar={() => setParaCancelar(null)}
       >
-        {confirmacao?.texto}
+        Ela deixa de aparecer no catálogo e não poderá mais ser reservada.
       </ConfirmDialog>
+    </>
+  )
+}
 
-      <AgendarEntregaDialog
-        reserva={paraAgendar}
-        onFechar={() => setParaAgendar(null)}
-        onAgendada={() => {
-          setParaAgendar(null)
-          setAviso({ tipo: 'sucesso', texto: 'Entrega agendada.' })
-          refresh()
-        }}
+/* ====================== ONG ====================== */
+
+type FiltroReserva = 'TODAS' | 'ATIVAS' | 'CONCLUIDAS' | 'ENCERRADAS'
+
+function passaReserva(filtro: FiltroReserva, r: ReservaExibida): boolean {
+  if (filtro === 'TODAS') return true
+  if (filtro === 'CONCLUIDAS') return r.status === 'CONCLUIDA'
+  if (filtro === 'ENCERRADAS') return r.status === 'CANCELADA' || r.status === 'RECUSADA'
+  return !reservaEncerrada(r)
+}
+
+function PainelOng({ conta }: { conta: Conta }) {
+  const buscar = useCallback(async () => {
+    const [reservas, disponiveis] = await Promise.all([
+      reservasApi.doUsuario(conta.idUsuario),
+      // Só para enriquecer os nomes. Se falhar, o painel continua funcionando.
+      doacoesApi.disponiveis().catch(() => [] as DoacaoView[]),
+    ])
+    return { reservas, disponiveis }
+  }, [conta.idUsuario])
+  const { data, loading, error, reload, refresh } = useFetch(buscar)
+
+  const [filtro, setFiltro] = useState<FiltroReserva>('TODAS')
+  const [aviso, setAviso] = useState<Aviso | null>(null)
+  const [ocupado, setOcupado] = useState(false)
+  const [paraCancelar, setParaCancelar] = useState<ReservaExibida | null>(null)
+
+  const reservas: ReservaExibida[] = useMemo(() => {
+    if (!data) return []
+    const doacaoPorId = new Map(data.disponiveis.map((d) => [d.idDoacao, d]))
+    return data.reservas
+      .map((r) => {
+        const doacao = doacaoPorId.get(r.idDoacao)
+        return {
+          ...r,
+          alimento: r.alimento ?? doacao?.alimento,
+          nomeDoador: r.nomeDoador ?? doacao?.nomeDoador,
+          retirarAte: doacao?.dataLimiteRetirada,
+        }
+      })
+      .sort((a, b) => b.idReserva - a.idReserva)
+  }, [data])
+
+  const kpis: Kpi[] = useMemo(() => {
+    const reservado = somar(
+      reservas
+        .filter((r) => r.status !== 'CANCELADA' && r.status !== 'RECUSADA')
+        .map((r) => ({ quantidade: r.quantidadeSolicitada, unidade: r.alimento?.unidadeMedida })),
+    )
+    return [
+      {
+        rotulo: 'Alimento reservado',
+        valor: reservado.kg,
+        casas: 1,
+        sufixo: ' kg',
+        icon: Leaf,
+        nota: reservado.unidades > 0 ? `+ ${reservado.unidades.toLocaleString('pt-BR')} itens por unidade` : undefined,
+      },
+      { rotulo: 'Reservas em andamento', valor: reservas.filter((r) => !reservaEncerrada(r)).length, casas: 0, icon: Clock },
+      { rotulo: 'Reservas concluídas', valor: reservas.filter((r) => r.status === 'CONCLUIDA').length, casas: 0, icon: CircleCheck },
+      { rotulo: 'Reservas no total', valor: reservas.length, casas: 0, icon: Inbox },
+    ]
+  }, [reservas])
+
+  const visiveis = reservas.filter((r) => passaReserva(filtro, r))
+
+  async function cancelar() {
+    if (!paraCancelar) return
+    setOcupado(true)
+    setAviso(null)
+    try {
+      await reservasApi.cancelar(conta.idUsuario, paraCancelar.idReserva)
+      setAviso({ tipo: 'sucesso', texto: 'Reserva cancelada. A quantidade voltou para a doação.' })
+    } catch (e) {
+      setAviso({ tipo: 'erro', texto: e instanceof Error ? e.message : 'Não foi possível cancelar a reserva.' })
+    } finally {
+      setOcupado(false)
+      setParaCancelar(null)
+      refresh()
+    }
+  }
+
+  return (
+    <>
+      <PageHeader
+        titulo={`Olá, ${conta.nome.split(' ')[0]}`}
+        rotulo="Painel"
+        descricao="Acompanhe as reservas da sua ONG."
+        acao={
+          <Button to="/doacoes" variant="accent">
+            Explorar alimentos
+          </Button>
+        }
       />
+
+      <section className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
+        <AvisoTela aviso={aviso} onFechar={() => setAviso(null)} />
+
+        {loading ? (
+          <Spinner texto="Carregando suas reservas..." />
+        ) : error ? (
+          <ErrorMessage mensagem={error} onRetry={reload} />
+        ) : (
+          <>
+            <Indicadores kpis={kpis} />
+            <p className="mt-3 text-xs text-ink/50">
+              Peso estimado: litros e mililitros são convertidos considerando 1 L ≈ 1 kg.
+            </p>
+
+            <div className="mt-10">
+              {reservas.length === 0 ? (
+                <EmptyState
+                  icon={Inbox}
+                  titulo="Nenhuma reserva ainda"
+                  texto="Encontre alimentos no catálogo e faça a primeira reserva da sua ONG."
+                  action={<Button to="/doacoes">Explorar alimentos</Button>}
+                />
+              ) : (
+                <>
+                  <Filtros
+                    valor={filtro}
+                    onChange={setFiltro}
+                    opcoes={[
+                      { valor: 'TODAS', rotulo: 'Todas', qtd: reservas.length },
+                      { valor: 'ATIVAS', rotulo: 'Em andamento', qtd: reservas.filter((r) => passaReserva('ATIVAS', r)).length },
+                      { valor: 'CONCLUIDAS', rotulo: 'Concluídas', qtd: reservas.filter((r) => passaReserva('CONCLUIDAS', r)).length },
+                      { valor: 'ENCERRADAS', rotulo: 'Canceladas', qtd: reservas.filter((r) => passaReserva('ENCERRADAS', r)).length },
+                    ]}
+                  />
+                  {visiveis.length === 0 ? (
+                    <EmptyState icon={Inbox} titulo="Nenhuma reserva nesta categoria" texto="Troque o filtro para ver as outras." />
+                  ) : (
+                    <div className="grid gap-5 lg:grid-cols-2">
+                      {visiveis.map((r) => (
+                        <MinhaReservaCard key={r.idReserva} reserva={r} ocupado={ocupado} onCancelar={() => setParaCancelar(r)} />
+                      ))}
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
+          </>
+        )}
+      </section>
+
+      <ConfirmDialog
+        aberto={paraCancelar !== null}
+        titulo="Cancelar reserva?"
+        rotuloConfirmar="Cancelar reserva"
+        perigo
+        carregando={ocupado}
+        onConfirmar={() => void cancelar()}
+        onCancelar={() => setParaCancelar(null)}
+      >
+        A quantidade volta a ficar disponível para outras ONGs.
+      </ConfirmDialog>
     </>
   )
 }
 
 export default function Painel() {
-  const { sessao } = useAuth()
-  if (!sessao) return null // a rota protegida já redireciona para o login
-  return <PainelConteudo sessao={sessao} />
+  const conta = useConta()
+  if (!conta) return null // a rota protegida já redireciona para o login
+  return conta.tipo === 'ONG' ? <PainelOng conta={conta} /> : <PainelDoador conta={conta} />
 }
