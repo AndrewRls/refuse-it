@@ -50,7 +50,7 @@ src/
 ```
 
 ### Descrição dos diretórios
- 
+
 | Diretório | Descrição |
 |---|---|
 | `assets/` | Armazena arquivos de imagem, fotos dos integrantes e logotipo. |
@@ -58,3 +58,8 @@ src/
 | `context/` | Gerencia estados globais da aplicação, como a autenticação. |
 | `data/` | Armazena informações estáticas, como dados dos integrantes e FAQ. |
 | `hooks/` | Reúne hooks personalizados, como `useFetch` e `useAuth`. |
+| `pages/` | Armazena as páginas e telas que compõem a interface da aplicação. |
+| `services/` | Centraliza os serviços responsáveis pela comunicação e integração com a API desenvolvida em Java. |
+| `types/` | Reúne as definições de interfaces, tipos e estruturas de dados utilizadas no TypeScript. |
+| `utils/` | Contém funções utilitárias e recursos auxiliares para reutilização e organização do código. |
+
