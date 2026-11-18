@@ -22,3 +22,15 @@ A plataforma também acompanha os resultados gerados, contabilizando a quantidad
 - Dashboard com métricas de impacto específicas para cada tipo de usuário (doador, instituição e administrador).
 - Sistema de autenticação, registro por etapas e controle de acesso conforme o perfil.
 - Seções institucionais: Home, Sobre, Integrantes, FAQ e Contato.
+
+## Tecnologias
+
+- React
+- TypeScript
+- Vite
+- Tailwind CSS
+- React Router
+- Lucide React
+- Fetch API
+- ESLint
+
