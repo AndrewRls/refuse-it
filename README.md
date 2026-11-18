@@ -18,3 +18,7 @@ A plataforma também acompanha os resultados gerados, contabilizando a quantidad
 - Listagem de alimentos disponíveis para doação, com pesquisa, filtros e opções de ordenação.
 - Cadastro e divulgação de doações com validação dos dados informados.
 - Solicitação e reserva de alimentos por instituições cadastradas.
+- Programação e monitoramento de entregas e retiradas.
+- Dashboard com métricas de impacto específicas para cada tipo de usuário (doador, instituição e administrador).
+- Sistema de autenticação, registro por etapas e controle de acesso conforme o perfil.
+- Seções institucionais: Home, Sobre, Integrantes, FAQ e Contato.
