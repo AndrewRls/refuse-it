@@ -63,3 +63,23 @@ src/
 | `types/` | Reúne as definições de interfaces, tipos e estruturas de dados utilizadas no TypeScript. |
 | `utils/` | Contém funções utilitárias e recursos auxiliares para reutilização e organização do código. |
 
+## 🚀 Como executar o projeto
+
+### Pré-requisitos
+
+Antes de iniciar, certifique-se de ter instalado:
+ 
+- [Node.js](https://nodejs.org/) — versão LTS.
+- [npm](https://www.npmjs.com/) — gerenciador de pacotes.
+ 
+### Instalação
+ 
+Clone o repositório e acesse a pasta do projeto:
+ 
+```bash
+git clone URL_DO_REPOSITORIO
+cd refuse-it
+npm install
+npm run dev
+```
+
