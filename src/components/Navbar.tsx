@@ -25,7 +25,7 @@ export default function Navbar() {
   const aberto = abertoEm === pathname
 
   const naHome = pathname === '/'
-  const primeiroNome = sessao?.usuario.nome.split(' ')[0]
+  const primeiroNome = sessao?.nome.split(' ')[0]
 
   function aoSair() {
     sair()

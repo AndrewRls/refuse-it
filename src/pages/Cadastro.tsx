@@ -2,54 +2,48 @@ import { useMemo, useState } from 'react'
 import type { ChangeEvent, FormEvent } from 'react'
 import { Navigate } from 'react-router-dom'
 import {
-  ArrowLeft, ArrowRight, Check, CircleCheck, Eye, EyeOff, HeartHandshake, LoaderCircle, Store, UserPlus,
+  ArrowLeft, ArrowRight, Check, CircleCheck, Eye, EyeOff, HeartHandshake, LoaderCircle, Store, UserPlus, UserRound,
 } from 'lucide-react'
+import type { LucideIcon } from 'lucide-react'
 import Button from '../components/Button'
 import FormField from '../components/FormField'
 import { useAuth } from '../hooks/useAuth'
 import { buscarCep } from '../services/cepService'
-import { estabelecimentoService } from '../services/estabelecimentoService'
-import { instituicaoService } from '../services/instituicaoService'
+import type { EnderecoCep } from '../services/cepService'
 import { usuarioService } from '../services/usuarioService'
-import type { CategoriaEstabelecimento } from '../types'
+import type { TipoConta } from '../types'
 import {
-  ESTADOS, apenasDigitos, cnpjValido, emailValido, mascararCEP, mascararCNPJ, mascararTelefone,
+  apenasDigitos, cnpjValido, cpfValido, emailValido, erroSenha, mascararCEP, mascararCNPJ, mascararCPF, mascararTelefone,
 } from '../utils/forms'
 import { inputClasses } from '../utils/styles'
 
-type Tipo = 'DOADOR' | 'INSTITUICAO'
 type Etapa = 1 | 2 | 3
-type Elemento = HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement
+type Elemento = HTMLInputElement | HTMLSelectElement
 
 interface Valores {
-  nome: string
   email: string
+  telefone: string
   senha: string
   confirmarSenha: string
-  telefone: string
-  nomeFantasia: string
-  razaoSocial: string
-  nomeInstituicao: string
-  cnpj: string
+  documento: string
   categoria: string
-  tipoInstituicao: string
-  descricao: string
   cep: string
-  endereco: string
-  cidade: string
-  estado: string
+  numero: string
 }
 
 type Erros = Partial<Record<keyof Valores, string>>
 
 const inicial: Valores = {
-  nome: '', email: '', senha: '', confirmarSenha: '', telefone: '',
-  nomeFantasia: '', razaoSocial: '', nomeInstituicao: '',
-  cnpj: '', categoria: '', tipoInstituicao: '', descricao: '',
-  cep: '', endereco: '', cidade: '', estado: '',
+  email: '', telefone: '', senha: '', confirmarSenha: '', documento: '', categoria: '', cep: '', numero: '',
 }
 
-const categorias: { valor: CategoriaEstabelecimento; rotulo: string }[] = [
+const tipos: { valor: TipoConta; icon: LucideIcon; titulo: string; texto: string }[] = [
+  { valor: 'PESSOA_FISICA', icon: UserRound, titulo: 'Pessoa física', texto: 'Quero doar alimentos. Preciso do CPF.' },
+  { valor: 'EMPRESA', icon: Store, titulo: 'Empresa', texto: 'Restaurante, mercado, padaria ou produtor que quer doar. Preciso do CNPJ.' },
+  { valor: 'ONG', icon: HeartHandshake, titulo: 'ONG', texto: 'Instituição que recebe alimentos para quem precisa. Preciso do CNPJ.' },
+]
+
+const categorias = [
   { valor: 'RESTAURANTE', rotulo: 'Restaurante' },
   { valor: 'MERCADO', rotulo: 'Mercado' },
   { valor: 'PADARIA', rotulo: 'Padaria' },
@@ -57,55 +51,44 @@ const categorias: { valor: CategoriaEstabelecimento; rotulo: string }[] = [
   { valor: 'OUTRO', rotulo: 'Outro' },
 ]
 
-const tiposInstituicao = [
-  'Cozinha comunitária', 'ONG', 'Abrigo', 'Associação de bairro', 'Entidade religiosa', 'Escola', 'Outro',
-]
+const nomesEtapas = ['Tipo de conta', 'Acesso', 'Documento e endereço']
 
-const nomesEtapas = ['Tipo de conta', 'Seus dados', 'Seu perfil']
-
-function validarConta(v: Valores): Erros {
+function validarAcesso(v: Valores): Erros {
   const e: Erros = {}
-
-  if (!v.nome.trim()) e.nome = 'Informe seu nome.'
-  else if (v.nome.trim().length < 3) e.nome = 'O nome deve ter pelo menos 3 caracteres.'
 
   if (!v.email.trim()) e.email = 'Informe seu e-mail.'
   else if (!emailValido(v.email.trim())) e.email = 'Informe um e-mail válido.'
 
-  if (!v.senha) e.senha = 'Crie uma senha.'
-  else if (v.senha.length < 8) e.senha = 'Use pelo menos 8 caracteres.'
+  const n = apenasDigitos(v.telefone).length
+  if (!v.telefone) e.telefone = 'Informe seu telefone.'
+  else if (n < 10 || n > 11) e.telefone = 'Informe o DDD e o número (10 ou 11 dígitos).'
+
+  const erro = erroSenha(v.senha)
+  if (erro) e.senha = erro
 
   if (!v.confirmarSenha) e.confirmarSenha = 'Confirme a senha.'
   else if (v.confirmarSenha !== v.senha) e.confirmarSenha = 'As senhas não conferem.'
 
-  if (v.telefone) {
-    const n = apenasDigitos(v.telefone).length
-    if (n < 10 || n > 11) e.telefone = 'Informe o DDD e o número (10 ou 11 dígitos).'
-  }
-
   return e
 }
 
-function validarPerfil(v: Valores, tipo: Tipo): Erros {
+function validarPerfil(v: Valores, tipo: TipoConta, cepEncontrado: boolean): Erros {
   const e: Erros = {}
 
-  if (tipo === 'DOADOR') {
-    if (!v.nomeFantasia.trim()) e.nomeFantasia = 'Informe o nome fantasia.'
-    if (!v.razaoSocial.trim()) e.razaoSocial = 'Informe a razão social.'
-    if (!v.cnpj) e.cnpj = 'Informe o CNPJ.'
-    else if (!cnpjValido(v.cnpj)) e.cnpj = 'CNPJ inválido. Confira os números.'
-    if (!v.categoria) e.categoria = 'Selecione a categoria.'
+  if (tipo === 'PESSOA_FISICA') {
+    if (!v.documento) e.documento = 'Informe o CPF.'
+    else if (!cpfValido(v.documento)) e.documento = 'CPF inválido. Confira os números.'
   } else {
-    if (!v.nomeInstituicao.trim()) e.nomeInstituicao = 'Informe o nome da instituição.'
-    if (v.cnpj && !cnpjValido(v.cnpj)) e.cnpj = 'CNPJ inválido. Confira os números.'
-    if (!v.tipoInstituicao) e.tipoInstituicao = 'Selecione o tipo da instituição.'
-    if (v.descricao.length > 500) e.descricao = 'Use no máximo 500 caracteres.'
+    if (!v.documento) e.documento = 'Informe o CNPJ.'
+    else if (!cnpjValido(v.documento)) e.documento = 'CNPJ inválido. Confira os números.'
   }
 
+  if (tipo === 'EMPRESA' && !v.categoria) e.categoria = 'Selecione a categoria.'
+
   if (apenasDigitos(v.cep).length !== 8) e.cep = 'Informe um CEP com 8 dígitos.'
-  if (!v.endereco.trim()) e.endereco = 'Informe o endereço, com número.'
-  if (!v.cidade.trim()) e.cidade = 'Informe a cidade.'
-  if (!v.estado) e.estado = 'Selecione o estado.'
+  else if (!cepEncontrado) e.cep = 'Não encontramos esse CEP. Confira os números.'
+
+  if (!v.numero) e.numero = 'Informe o número do endereço.'
 
   return e
 }
@@ -114,21 +97,32 @@ export default function Cadastro() {
   const { sessao, entrar } = useAuth()
 
   const [etapa, setEtapa] = useState<Etapa>(1)
-  const [tipo, setTipo] = useState<Tipo | null>(null)
+  const [tipo, setTipo] = useState<TipoConta | null>(null)
   const [valores, setValores] = useState<Valores>(inicial)
   const [tocados, setTocados] = useState<Partial<Record<keyof Valores, boolean>>>({})
   const [tentou, setTentou] = useState(false)
   const [mostrarSenha, setMostrarSenha] = useState(false)
+  const [enderecoCep, setEnderecoCep] = useState<EnderecoCep | null>(null)
   const [buscandoCep, setBuscandoCep] = useState(false)
+  const [verificando, setVerificando] = useState(false)
   const [enviando, setEnviando] = useState(false)
   const [erroApi, setErroApi] = useState<string | null>(null)
-  const [idUsuario, setIdUsuario] = useState<number | null>(null)
+  const [emailRepetido, setEmailRepetido] = useState<string | null>(null)
   const [concluido, setConcluido] = useState(false)
   const [entrouAuto, setEntrouAuto] = useState(false)
 
-  const errosConta = useMemo(() => validarConta(valores), [valores])
-  const errosPerfil = useMemo(() => (tipo ? validarPerfil(valores, tipo) : {}), [valores, tipo])
-  const erros = etapa === 2 ? errosConta : errosPerfil
+  const errosAcesso = useMemo(() => {
+    const e = validarAcesso(valores)
+    if (!e.email && emailRepetido && valores.email.trim().toLowerCase() === emailRepetido) {
+      e.email = 'Este e-mail já está cadastrado.'
+    }
+    return e
+  }, [valores, emailRepetido])
+  const errosPerfil = useMemo(
+    () => (tipo ? validarPerfil(valores, tipo, enderecoCep !== null) : {}),
+    [valores, tipo, enderecoCep],
+  )
+  const erros = etapa === 2 ? errosAcesso : errosPerfil
 
   // Quem já está logado não precisa se cadastrar (exceto na tela de sucesso)
   if (sessao && !concluido) return <Navigate to="/" replace />
@@ -157,20 +151,12 @@ export default function Cadastro() {
   async function aoMudarCep(texto: string) {
     const mascarado = mascararCEP(texto)
     alterar('cep', mascarado)
+    setEnderecoCep(null)
 
     if (apenasDigitos(mascarado).length === 8) {
       setBuscandoCep(true)
-      const endereco = await buscarCep(mascarado)
+      setEnderecoCep(await buscarCep(mascarado))
       setBuscandoCep(false)
-      if (endereco) {
-        // Só preenche o que ainda está vazio, para não apagar o que a pessoa digitou
-        setValores((v) => ({
-          ...v,
-          endereco: v.endereco || endereco.endereco,
-          cidade: v.cidade || endereco.cidade,
-          estado: v.estado || endereco.estado,
-        }))
-      }
     }
   }
 
@@ -180,49 +166,20 @@ export default function Cadastro() {
     setEnviando(true)
 
     try {
-      let id = idUsuario
-      if (id === null) {
-        const usuario = await usuarioService.criar({
-          nome: valores.nome.trim(),
-          email: valores.email.trim(),
-          senha: valores.senha,
-          telefone: apenasDigitos(valores.telefone) || undefined,
-          tipoUsuario: tipo,
-        })
-        id = usuario.idUsuario
-        setIdUsuario(id)
-      }
-
-      const endereco = {
-        endereco: valores.endereco.trim(),
-        cidade: valores.cidade.trim(),
-        estado: valores.estado,
+      await usuarioService.cadastrar({
+        tipo,
+        email: valores.email.trim(),
+        senha: valores.senha,
+        telefone: apenasDigitos(valores.telefone),
+        documento: apenasDigitos(valores.documento),
+        categoria: valores.categoria || undefined,
         cep: apenasDigitos(valores.cep),
-      }
-
-      if (tipo === 'DOADOR') {
-        await estabelecimentoService.criar({
-          idUsuario: id,
-          nomeFantasia: valores.nomeFantasia.trim(),
-          razaoSocial: valores.razaoSocial.trim(),
-          cnpj: apenasDigitos(valores.cnpj),
-          categoria: valores.categoria as CategoriaEstabelecimento,
-          ...endereco,
-        })
-      } else {
-        await instituicaoService.criar({
-          idUsuario: id,
-          nome: valores.nomeInstituicao.trim(),
-          cnpj: apenasDigitos(valores.cnpj) || undefined,
-          tipoInstituicao: valores.tipoInstituicao,
-          descricao: valores.descricao.trim() || undefined,
-          ...endereco,
-        })
-      }
+        numero: apenasDigitos(valores.numero),
+      })
 
       setConcluido(true)
       try {
-        await entrar(valores.email.trim(), valores.senha)
+        await entrar(valores.email.trim(), valores.senha, tipo)
         setEntrouAuto(true)
       } catch {
         setEntrouAuto(false) // conta criada; a pessoa entra manualmente
@@ -250,6 +207,20 @@ export default function Cadastro() {
     }
 
     if (etapa === 2) {
+      // Confere na API se o e-mail já existe, antes de pedir o resto dos dados
+      setVerificando(true)
+      try {
+        const existe = await usuarioService.emailExiste(valores.email.trim())
+        if (existe) {
+          setEmailRepetido(valores.email.trim().toLowerCase())
+          document.getElementById('email')?.focus()
+          return
+        }
+      } catch {
+        /* se a checagem falhar, a API valida de novo no cadastro */
+      } finally {
+        setVerificando(false)
+      }
       setEtapa(3)
       setTentou(false)
       return
@@ -273,12 +244,12 @@ export default function Cadastro() {
           <h1 className="mt-4 text-3xl">Conta criada!</h1>
           <p className="mt-3 text-ink/70">
             {entrouAuto
-              ? `Bem-vindo(a) ao Refuse It, ${valores.nome.trim().split(' ')[0]}. Você já está logado(a).`
+              ? 'Bem-vindo(a) ao Refuse It. Você já está logado(a).'
               : 'Sua conta foi criada. Entre com seu e-mail e senha para continuar.'}
           </p>
           <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
             {!entrouAuto && <Button to="/login">Entrar</Button>}
-            {entrouAuto && tipo === 'DOADOR' && <Button to="/doacoes/nova">Publicar minha primeira doação</Button>}
+            {entrouAuto && tipo !== 'ONG' && <Button to="/doacoes/nova">Publicar minha primeira doação</Button>}
             {entrouAuto && (
               <Button to="/doacoes" variant="secondary">
                 Explorar o catálogo
@@ -320,37 +291,30 @@ export default function Cadastro() {
           })}
         </ol>
 
-        <form
-          onSubmit={avancar}
-          noValidate
-          className="mt-8 space-y-6 rounded-3xl bg-white p-6 ring-1 ring-brand-100 sm:p-8"
-        >
+        <form onSubmit={(ev) => void avancar(ev)} noValidate className="mt-8 space-y-6 rounded-3xl bg-white p-6 ring-1 ring-brand-100 sm:p-8">
           {/* ETAPA 1 */}
           {etapa === 1 && (
             <>
               <div>
                 <h2 className="text-xl">Como você vai usar o Refuse It?</h2>
-                <p className="mt-1 text-sm text-ink/70">Você poderá mudar isso falando com a equipe depois.</p>
+                <p className="mt-1 text-sm text-ink/70">O tipo da conta define o que você pode fazer na plataforma.</p>
               </div>
 
-              <div className="grid gap-4 sm:grid-cols-2">
-                {[
-                  { valor: 'DOADOR' as Tipo, icon: Store, titulo: 'Quero doar', texto: 'Restaurante, mercado, padaria ou produtor com alimentos que sobraram.' },
-                  { valor: 'INSTITUICAO' as Tipo, icon: HeartHandshake, titulo: 'Quero receber', texto: 'ONG, abrigo, cozinha comunitária ou outra entidade que atende pessoas.' },
-                ].map((op) => (
+              <div className="grid gap-4 sm:grid-cols-3">
+                {tipos.map((op) => (
                   <button
                     key={op.valor}
                     type="button"
                     aria-pressed={tipo === op.valor}
                     onClick={() => setTipo(op.valor)}
-                    className={`rounded-3xl p-6 text-left ring-2 transition duration-200 hover:-translate-y-1 ${
+                    className={`rounded-3xl p-5 text-left ring-2 transition duration-200 hover:-translate-y-1 ${
                       tipo === op.valor ? 'bg-brand-50 ring-brand-700' : 'bg-white ring-brand-100 hover:ring-brand-500'
                     }`}
                   >
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-brand-100 text-brand-700">
-                      <op.icon size={24} />
+                    <span className="flex h-11 w-11 items-center justify-center rounded-2xl bg-brand-100 text-brand-700">
+                      <op.icon size={22} />
                     </span>
-                    <p className="mt-4 text-lg font-bold text-brand-900">{op.titulo}</p>
+                    <p className="mt-4 text-base font-bold text-brand-900">{op.titulo}</p>
                     <p className="mt-1 text-sm leading-relaxed text-ink/70">{op.texto}</p>
                   </button>
                 ))}
@@ -363,16 +327,12 @@ export default function Cadastro() {
             <>
               <h2 className="text-xl">Seus dados de acesso</h2>
 
-              <FormField id="nome" label="Nome completo" required error={erroDe('nome')}>
-                <input {...campo('nome')} type="text" autoComplete="name" maxLength={120} />
-              </FormField>
-
               <div className="grid gap-6 sm:grid-cols-2">
                 <FormField id="email" label="E-mail" required error={erroDe('email')}>
                   <input {...campo('email')} type="email" autoComplete="email" maxLength={150} placeholder="voce@exemplo.com" />
                 </FormField>
 
-                <FormField id="telefone" label="Telefone" error={erroDe('telefone')} hint="Opcional. Com DDD.">
+                <FormField id="telefone" label="Telefone" required error={erroDe('telefone')} hint="Com DDD.">
                   <input
                     {...campo('telefone')}
                     type="tel"
@@ -385,7 +345,13 @@ export default function Cadastro() {
               </div>
 
               <div className="grid gap-6 sm:grid-cols-2">
-                <FormField id="senha" label="Senha" required error={erroDe('senha')} hint="Mínimo de 8 caracteres.">
+                <FormField
+                  id="senha"
+                  label="Senha"
+                  required
+                  error={erroDe('senha')}
+                  hint="11 caracteres ou mais, com 1 maiúscula e 1 especial (! @ # $ % & *)."
+                >
                   <div className="relative">
                     <input
                       {...campo('senha')}
@@ -420,84 +386,50 @@ export default function Cadastro() {
           {/* ETAPA 3 */}
           {etapa === 3 && tipo && (
             <>
-              <h2 className="text-xl">{tipo === 'DOADOR' ? 'Dados do estabelecimento' : 'Dados da instituição'}</h2>
-
-              {idUsuario !== null && erroApi && (
-                <p className="rounded-2xl bg-amber-50 px-4 py-3 text-sm font-semibold text-amber-800">
-                  Sua conta de acesso já foi criada. Falta só concluir os dados abaixo.
+              <div>
+                <h2 className="text-xl">{tipo === 'PESSOA_FISICA' ? 'Seu CPF e endereço' : 'CNPJ e endereço'}</h2>
+                <p className="mt-1 text-sm text-ink/70">
+                  O nome {tipo === 'PESSOA_FISICA' ? '' : 'e a razão social '}são buscados automaticamente pelo documento.
                 </p>
-              )}
+              </div>
 
-              {tipo === 'DOADOR' ? (
-                <>
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <FormField id="nomeFantasia" label="Nome fantasia" required error={erroDe('nomeFantasia')}>
-                      <input {...campo('nomeFantasia')} type="text" maxLength={120} />
-                    </FormField>
-                    <FormField id="razaoSocial" label="Razão social" required error={erroDe('razaoSocial')}>
-                      <input {...campo('razaoSocial')} type="text" maxLength={150} />
-                    </FormField>
-                  </div>
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <FormField id="cnpj" label="CNPJ" required error={erroDe('cnpj')}>
-                      <input
-                        {...campo('cnpj')}
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="00.000.000/0000-00"
-                        onChange={(e) => alterar('cnpj', mascararCNPJ(e.target.value))}
-                      />
-                    </FormField>
-                    <FormField id="categoria" label="Categoria" required error={erroDe('categoria')}>
-                      <select {...campo('categoria')}>
-                        <option value="">Selecione...</option>
-                        {categorias.map((c) => (
-                          <option key={c.valor} value={c.valor}>{c.rotulo}</option>
-                        ))}
-                      </select>
-                    </FormField>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <FormField id="nomeInstituicao" label="Nome da instituição" required error={erroDe('nomeInstituicao')}>
-                    <input {...campo('nomeInstituicao')} type="text" maxLength={120} />
+              <div className="grid gap-6 sm:grid-cols-2">
+                {tipo === 'PESSOA_FISICA' ? (
+                  <FormField id="documento" label="CPF" required error={erroDe('documento')}>
+                    <input
+                      {...campo('documento')}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="000.000.000-00"
+                      onChange={(e) => alterar('documento', mascararCPF(e.target.value))}
+                    />
                   </FormField>
-
-                  <div className="grid gap-6 sm:grid-cols-2">
-                    <FormField id="tipoInstituicao" label="Tipo" required error={erroDe('tipoInstituicao')}>
-                      <select {...campo('tipoInstituicao')}>
-                        <option value="">Selecione...</option>
-                        {tiposInstituicao.map((t) => (
-                          <option key={t} value={t}>{t}</option>
-                        ))}
-                      </select>
-                    </FormField>
-                    <FormField id="cnpj" label="CNPJ" error={erroDe('cnpj')} hint="Opcional.">
-                      <input
-                        {...campo('cnpj')}
-                        type="text"
-                        inputMode="numeric"
-                        placeholder="00.000.000/0000-00"
-                        onChange={(e) => alterar('cnpj', mascararCNPJ(e.target.value))}
-                      />
-                    </FormField>
-                  </div>
-
-                  <FormField
-                    id="descricao"
-                    label="Sobre a instituição"
-                    error={erroDe('descricao')}
-                    hint={`Opcional. ${valores.descricao.length}/500 caracteres`}
-                  >
-                    <textarea {...campo('descricao')} rows={3} placeholder="Quem vocês atendem e quantas pessoas, por exemplo." />
+                ) : (
+                  <FormField id="documento" label="CNPJ" required error={erroDe('documento')}>
+                    <input
+                      {...campo('documento')}
+                      type="text"
+                      inputMode="numeric"
+                      placeholder="00.000.000/0000-00"
+                      onChange={(e) => alterar('documento', mascararCNPJ(e.target.value))}
+                    />
                   </FormField>
-                </>
-              )}
+                )}
+
+                {tipo === 'EMPRESA' && (
+                  <FormField id="categoria" label="Categoria" required error={erroDe('categoria')}>
+                    <select {...campo('categoria')}>
+                      <option value="">Selecione...</option>
+                      {categorias.map((c) => (
+                        <option key={c.valor} value={c.valor}>{c.rotulo}</option>
+                      ))}
+                    </select>
+                  </FormField>
+                )}
+              </div>
 
               <div className="grid gap-6 sm:grid-cols-3">
-                <FormField id="cep" label="CEP" required error={erroDe('cep')} hint={buscandoCep ? 'Buscando endereço...' : 'Preenche o endereço sozinho.'}>
+                <FormField id="cep" label="CEP" required error={erroDe('cep')} hint={buscandoCep ? 'Buscando endereço...' : undefined}>
                   <input
                     {...campo('cep')}
                     type="text"
@@ -507,28 +439,24 @@ export default function Cadastro() {
                     onChange={(e) => void aoMudarCep(e.target.value)}
                   />
                 </FormField>
-                <div className="sm:col-span-2">
-                  <FormField id="endereco" label="Endereço" required error={erroDe('endereco')} hint="Inclua o número.">
-                    <input {...campo('endereco')} type="text" autoComplete="street-address" maxLength={250} />
-                  </FormField>
-                </div>
-              </div>
 
-              <div className="grid gap-6 sm:grid-cols-3">
-                <div className="sm:col-span-2">
-                  <FormField id="cidade" label="Cidade" required error={erroDe('cidade')}>
-                    <input {...campo('cidade')} type="text" maxLength={100} />
-                  </FormField>
-                </div>
-                <FormField id="estado" label="Estado" required error={erroDe('estado')}>
-                  <select {...campo('estado')}>
-                    <option value="">UF</option>
-                    {ESTADOS.map((uf) => (
-                      <option key={uf} value={uf}>{uf}</option>
-                    ))}
-                  </select>
+                <FormField id="numero" label="Número" required error={erroDe('numero')} hint="Somente números.">
+                  <input
+                    {...campo('numero')}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={8}
+                    onChange={(e) => alterar('numero', apenasDigitos(e.target.value))}
+                  />
                 </FormField>
               </div>
+
+              {enderecoCep && (
+                <p className="rounded-lg bg-brand-50 px-4 py-3 text-sm text-brand-900 ring-1 ring-brand-100">
+                  <strong>Endereço encontrado:</strong> {enderecoCep.endereco || 'Logradouro não informado'}
+                  {valores.numero ? `, ${valores.numero}` : ''} · {enderecoCep.cidade} - {enderecoCep.estado}
+                </p>
+              )}
             </>
           )}
 
@@ -539,25 +467,38 @@ export default function Cadastro() {
           )}
 
           {erroApi && (
-            <p role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-sm font-semibold text-red-700">
-              {erroApi}
+            <div role="alert" className="rounded-2xl bg-red-50 px-4 py-3 text-sm text-red-700">
+              <p className="font-semibold">{erroApi}</p>
+              <p className="mt-1 text-xs">Confira o CPF ou CNPJ e o CEP. Se o erro continuar, tente de novo em instantes.</p>
+            </div>
+          )}
+
+          {enviando && (
+            <p className="text-xs text-ink/60">
+              A consulta do documento pode levar alguns segundos. Não feche a página.
             </p>
           )}
 
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between">
-            {etapa > 1 && idUsuario === null ? (
-              <Button type="button" variant="secondary" onClick={voltar}>
+            {etapa > 1 ? (
+              <Button type="button" variant="secondary" onClick={voltar} disabled={enviando || verificando}>
                 <ArrowLeft size={18} /> Voltar
               </Button>
             ) : (
               <span />
             )}
 
-            <Button type="submit" disabled={enviando || (etapa === 1 && !tipo)}>
+            <Button type="submit" disabled={enviando || verificando || (etapa === 1 && !tipo)}>
               {etapa < 3 ? (
-                <>
-                  Continuar <ArrowRight size={18} />
-                </>
+                verificando ? (
+                  <>
+                    <LoaderCircle size={18} className="animate-spin" /> Verificando...
+                  </>
+                ) : (
+                  <>
+                    Continuar <ArrowRight size={18} />
+                  </>
+                )
               ) : enviando ? (
                 <>
                   <LoaderCircle size={18} className="animate-spin" /> Criando conta...

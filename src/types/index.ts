@@ -107,12 +107,8 @@ export interface Credenciais {
   senha: string
 }
 
-/** Quem está logado: o usuário e o perfil vinculado a ele (1 para 1 no banco). */
-export interface Sessao {
-  usuario: Usuario
-  estabelecimento?: Estabelecimento
-  instituicao?: Instituicao
-}
+/** Quem está logado (é o que a API de login devolve). */
+export type Sessao = Conta
 
 export type NovoUsuario = Pick<Usuario, 'nome' | 'email' | 'telefone' | 'tipoUsuario'> & { senha: string }
 export type NovoEstabelecimento = Omit<Estabelecimento, 'idEstabelecimento'>

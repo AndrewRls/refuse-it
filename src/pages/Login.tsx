@@ -7,11 +7,12 @@ import FormField from '../components/FormField'
 import { useAuth } from '../hooks/useAuth'
 import { inputClasses } from '../utils/styles'
 import Foto from '../components/Foto'
+import type { TipoConta } from '../types'
 
-const contasTeste = [
-  { rotulo: 'Doador (Padaria)', email: 'doador@refuseit.com' },
-  { rotulo: 'Instituição', email: 'instituicao@refuseit.com' },
-  { rotulo: 'Admin', email: 'admin@refuseit.com' },
+const tiposConta: { valor: TipoConta; rotulo: string }[] = [
+  { valor: 'ONG', rotulo: 'ONG' },
+  { valor: 'EMPRESA', rotulo: 'Empresa' },
+  { valor: 'PESSOA_FISICA', rotulo: 'Pessoa física' },
 ]
 
 export default function Login() {
@@ -19,6 +20,7 @@ export default function Login() {
   const location = useLocation()
   const destino = (location.state as { from?: string } | null)?.from ?? '/'
 
+  const [tipo, setTipo] = useState<TipoConta>('ONG')
   const [email, setEmail] = useState('')
   const [senha, setSenha] = useState('')
   const [mostrar, setMostrar] = useState(false)
@@ -48,7 +50,7 @@ export default function Login() {
 
     setEnviando(true)
     try {
-      await entrar(email.trim(), senha)
+      await entrar(email.trim(), senha, tipo)
     } catch (err) {
       setErroApi(err instanceof Error ? err.message : 'Não foi possível entrar.')
     } finally {
@@ -60,7 +62,6 @@ export default function Login() {
     <section className="px-4 py-12 sm:px-6 lg:py-20">
       <div className="mx-auto grid max-w-5xl overflow-hidden rounded-3xl shadow-xl shadow-brand-900/10 ring-1 ring-brand-100 lg:grid-cols-2">
         {/* Painel da marca */}
-                {/* Painel da marca */}
         <div className="relative isolate hidden flex-col justify-between overflow-hidden p-10 text-white lg:flex">
           <Foto nome={['login', 'foto-3']} alt="" className="absolute inset-0 -z-10 h-full w-full" />
           <div aria-hidden="true" className="absolute inset-0 -z-10 bg-linear-to-t from-black/80 via-black/40 to-black/20" />
@@ -80,9 +81,29 @@ export default function Login() {
         {/* Formulário */}
         <div className="bg-white p-6 sm:p-10">
           <h1 className="text-3xl">Entrar</h1>
-          <p className="mt-2 text-sm text-ink/70">Use o e-mail e a senha cadastrados.</p>
+          <p className="mt-2 text-sm text-ink/70">Escolha o tipo da sua conta e use o e-mail e a senha cadastrados.</p>
 
           <form onSubmit={enviar} noValidate className="mt-8 space-y-5">
+                        <fieldset>
+              <legend className="mb-1.5 text-sm font-bold text-brand-900">Tipo de conta</legend>
+              <div className="grid grid-cols-3 gap-2">
+                {tiposConta.map((t) => (
+                  <button
+                    key={t.valor}
+                    type="button"
+                    aria-pressed={tipo === t.valor}
+                    onClick={() => setTipo(t.valor)}
+                    className={`rounded-lg px-3 py-2.5 text-sm font-bold ring-1 transition ${
+                      tipo === t.valor
+                        ? 'bg-brand-700 text-white ring-brand-700'
+                        : 'bg-white text-brand-900 ring-brand-100 hover:bg-brand-50'
+                    }`}
+                  >
+                    {t.rotulo}
+                  </button>
+                ))}
+              </div>
+            </fieldset>
             <FormField id="email" label="E-mail" required error={enviou ? erros.email : undefined}>
               <input
                 id="email"
@@ -146,27 +167,7 @@ export default function Login() {
             </Link>
           </p>
 
-          {import.meta.env.DEV && (
-            <div className="mt-6 rounded-2xl bg-brand-50 p-4 text-xs ring-1 ring-brand-100">
-              <p className="font-bold text-brand-900">Contas de teste (aparece só em desenvolvimento)</p>
-              <p className="mt-1 text-ink/60">Senha de todas: 123456</p>
-              <div className="mt-3 flex flex-wrap gap-2">
-                {contasTeste.map((c) => (
-                  <button
-                    key={c.email}
-                    type="button"
-                    onClick={() => {
-                      setEmail(c.email)
-                      setSenha('123456')
-                    }}
-                    className="rounded-full bg-white px-3 py-1.5 font-semibold text-brand-700 ring-1 ring-brand-100 transition hover:bg-brand-100"
-                  >
-                    {c.rotulo}
-                  </button>
-                ))}
-              </div>
-            </div>
-          )}
+          
         </div>
       </div>
     </section>

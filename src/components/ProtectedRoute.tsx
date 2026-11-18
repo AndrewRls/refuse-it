@@ -3,9 +3,9 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import EmptyState from './EmptyState'
 import Button from './Button'
 import { useAuth } from '../hooks/useAuth'
-import type { TipoUsuario } from '../types'
+import type { TipoConta } from '../types'
 
-export default function ProtectedRoute({ roles }: { roles?: TipoUsuario[] }) {
+export default function ProtectedRoute({ roles }: { roles?: TipoConta[] }) {
   const { sessao } = useAuth()
   const location = useLocation()
 
@@ -13,7 +13,7 @@ export default function ProtectedRoute({ roles }: { roles?: TipoUsuario[] }) {
     return <Navigate to="/login" replace state={{ from: location.pathname }} />
   }
 
-  if (roles && !roles.includes(sessao.usuario.tipoUsuario)) {
+  if (roles && !roles.includes(sessao.tipo)) {
     return (
       <section className="mx-auto max-w-7xl px-4 py-20 sm:px-6">
         <EmptyState

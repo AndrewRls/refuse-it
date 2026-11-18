@@ -1,24 +1,24 @@
-import { request } from './api'
-import { estabelecimentoService } from './estabelecimentoService'
-import { instituicaoService } from './instituicaoService'
-import type { Credenciais, Sessao, Usuario } from '../types'
+import { ApiError, request } from './api'
+import type { Sessao, TipoConta } from '../types'
 
-export async function autenticar(credenciais: Credenciais): Promise<Sessao> {
-  const usuario = await request<Usuario>('/login', {
-    method: 'POST',
-    body: JSON.stringify(credenciais),
-  })
+interface RespostaLogin {
+  idUsuario: number
+  nome?: string | null
+  tipo?: string | null
+}
 
-  // Descobre o perfil vinculado ao usuário (tabelas com id_usuario único)
-  if (usuario.tipoUsuario === 'DOADOR') {
-    const lista = await estabelecimentoService.listar()
-    return { usuario, estabelecimento: lista.find((e) => e.idUsuario === usuario.idUsuario) }
+export async function autenticar(email: string, senha: string, tipo: TipoConta): Promise<Sessao> {
+  try {
+    const r = await request<RespostaLogin>('/usuarios/login', {
+      method: 'POST',
+      body: JSON.stringify({ email, senha, tipo }),
+    })
+    return { idUsuario: r.idUsuario, nome: r.nome?.trim() || 'Usuário', tipo }
+  } catch (e) {
+    // A API responde 401 sem corpo quando algo não confere
+    if (e instanceof ApiError && e.status === 401) {
+      throw new ApiError(401, 'E-mail, senha ou tipo de conta incorretos.')
+    }
+    throw e
   }
-
-  if (usuario.tipoUsuario === 'INSTITUICAO') {
-    const lista = await instituicaoService.listar()
-    return { usuario, instituicao: lista.find((i) => i.idUsuario === usuario.idUsuario) }
-  }
-
-  return { usuario }
 }

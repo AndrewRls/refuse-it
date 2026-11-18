@@ -32,8 +32,8 @@ export default function App() {
         <Route path="/contato" element={<Contato />} />
         <Route path="/diagnostico" element={<Diagnostico />} />
 
-        {/* Só doadores (e admin) publicam doações */}
-        <Route element={<ProtectedRoute roles={['DOADOR', 'ADMIN']} />}>
+                {/* Só pessoas físicas e empresas publicam doações */}
+        <Route element={<ProtectedRoute roles={['PESSOA_FISICA', 'EMPRESA']} />}>
           <Route path="/doacoes/nova" element={<NovaDoacao />} />
         </Route>
 
