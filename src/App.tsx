@@ -14,7 +14,7 @@ import IntegranteDetalhe from './pages/IntegranteDetalhe'
 import Faq from './pages/Faq'
 import Contato from './pages/Contato'
 import NotFound from './pages/NotFound'
-import Diagnostico from './pages/Diagnostico'
+
 
 export default function App() {
   return (
@@ -30,7 +30,6 @@ export default function App() {
         <Route path="/integrantes/:rm" element={<IntegranteDetalhe />} />
         <Route path="/faq" element={<Faq />} />
         <Route path="/contato" element={<Contato />} />
-        <Route path="/diagnostico" element={<Diagnostico />} />
 
                 {/* Só pessoas físicas e empresas publicam doações */}
         <Route element={<ProtectedRoute roles={['PESSOA_FISICA', 'EMPRESA']} />}>
