@@ -96,5 +96,13 @@ Após iniciar o projeto, acesse http://localhost:5173 pelo navegador. Duplique o
 | Luis Felipe Fernandes Esteves | RM569064 | 1TDSPF | Engenharia de software e negócio |
 
 
+## Links
+
+- **GitHub:** **https://github.com/AndrewRls/refuse-it**
+- **Aplicação (Vercel):** **https://refuse-it.vercel.app/**
+- **API Java (Render):** **https://refuseitaplication.onrender.com**
+- **Vídeo (YouTube):** **https://youtu.be/qU-0TsMenyQ**
+
+
 
 
