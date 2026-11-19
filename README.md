@@ -85,4 +85,16 @@ npm run dev
 Após iniciar o projeto, acesse http://localhost:5173 pelo navegador. Duplique o arquivo .env.example com o nome .env e configure VITE_API_URL com o endereço da API.
 
 
+# Integrantes
+
+| Nome | RM | Turma | Função |
+|---|---|---|---|
+| Andrew Rodrigues Lima da Silva | RM573777 | 1TDSPF | Front-end |
+| Bryan Costa Silva | RM569439 | 1TDSPF | Back-end (Java) |
+| Igor Blacconaro Santos | RM572033 | 1TDSPF | Banco de dados e Python |
+| Luis Henrique Rondão Mendonça | RM569797 | 1TDSPO | Chatbot e IA |
+| Luis Felipe Fernandes Esteves | RM569064 | 1TDSPF | Engenharia de software e negócio |
+
+
+
 
