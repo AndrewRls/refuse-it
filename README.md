@@ -104,5 +104,12 @@ Após iniciar o projeto, acesse http://localhost:5173 pelo navegador. Duplique o
 - **Vídeo (YouTube):** **https://youtu.be/qU-0TsMenyQ**
 
 
+## Contato
+
+- **Andrew:** [GitHub](https://github.com/AndrewRls) · [LinkedIn](https://www.linkedin.com/in/andrew-rls)
+- **Bryan:** [GitHub](https://github.com/BryanC0staDev) · [LinkedIn](https://www.linkedin.com/in/bryan-costa-silva/)
+- **Igor:** [GitHub](https://github.com/igorblacconaro) · [LinkedIn](https://www.linkedin.com/in/igorblacconaro)
+- **Luis Henrique:** [GitHub](https://github.com/luishdev0) · [LinkedIn](https://www.linkedin.com/in/luis-rondao)
+- **Luis Felipe:** [GitHub](https://github.com/dev-luisfernandes) · [LinkedIn](https://www.linkedin.com/in/luis-f-b2a3983b3/)
 
 
